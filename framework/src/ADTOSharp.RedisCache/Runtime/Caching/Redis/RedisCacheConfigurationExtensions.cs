@@ -31,6 +31,7 @@ namespace ADTOSharp.Runtime.Caching.Redis
 
             iocManager.RegisterIfNot<ICacheManager, ADTOSharpRedisCacheManager>();
             iocManager.RegisterIfNot<IOnlineClientStore, RedisOnlineClientStore>();
+            iocManager.RegisterIfNot<RedisOnlineClientStore, RedisOnlineClientStore>();
             
             optionsAction(iocManager.Resolve<ADTOSharpRedisCacheOptions>());
         }
