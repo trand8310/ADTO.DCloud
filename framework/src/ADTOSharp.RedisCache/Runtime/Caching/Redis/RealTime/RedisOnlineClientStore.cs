@@ -281,11 +281,11 @@ namespace ADTOSharp.Runtime.Caching.Redis.RealTime
             redis.call('HDEL', KEYS[1], ARGV[1]);
             redis.call('DEL', KEYS[3]);
 
-            if KEYS[2] then
+            if KEYS[2] ~= '' then
                 redis.call('SREM', KEYS[2], ARGV[1]);
             end
 
-            if KEYS[4] then
+            if KEYS[4] ~= '' then
                 redis.call('SREM', KEYS[4], ARGV[1]);
             end
 
@@ -299,11 +299,11 @@ namespace ADTOSharp.Runtime.Caching.Redis.RealTime
             }
             else
             {
-                keys.Add(RedisKey.Null);
+                keys.Add(string.Empty);
             }
 
             keys.Add(GetHeartbeatKey(connectionId));
-            keys.Add(!instanceId.IsNullOrWhiteSpace() ? GetInstanceConnectionsKey(instanceId) : RedisKey.Null);
+            keys.Add(!instanceId.IsNullOrWhiteSpace() ? GetInstanceConnectionsKey(instanceId) : string.Empty);
 
             await database.ScriptEvaluateAsync(script, keys.ToArray(), new RedisValue[] { connectionId, clientJson });
 
