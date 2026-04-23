@@ -7,6 +7,7 @@ using ADTOSharp.Localization;
 using ADTOSharp.RealTime;
 using ADTOSharp.Runtime.Session;
 using ADTOSharp.UI;
+using ADTOSharp.Runtime.Caching.Redis.RealTime;
 using Castle.Core.Logging;
 using Castle.Windsor;
 using Microsoft.AspNetCore.SignalR;
@@ -25,6 +26,7 @@ public class ChatHub : OnlineClientHubBase
     private readonly ILocalizationManager _localizationManager;
     private readonly IWindsorContainer _windsorContainer;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly IOnlineClientStore _onlineClientStore;
     private bool _isCallByRelease;
     private IADTOSharpSession ChatAppSession { get; }
 
@@ -37,14 +39,27 @@ public class ChatHub : OnlineClientHubBase
         IWindsorContainer windsorContainer,
         IOnlineClientManager onlineClientManager,
         IOnlineClientInfoProvider clientInfoProvider, 
-        IHtmlSanitizer htmlSanitizer) : base(onlineClientManager, clientInfoProvider)
+        IHtmlSanitizer htmlSanitizer,
+        IOnlineClientStore onlineClientStore) : base(onlineClientManager, clientInfoProvider)
     {
         _chatMessageManager = chatMessageManager;
         _localizationManager = localizationManager;
         _windsorContainer = windsorContainer;
         _htmlSanitizer = htmlSanitizer;
+        _onlineClientStore = onlineClientStore;
         Logger = NullLogger.Instance;
         ChatAppSession = NullADTOSharpSession.Instance;
+    }
+
+    /// <summary>
+    /// 客户端心跳（用于刷新 Redis 在线连接 TTL）。
+    /// </summary>
+    public async Task Heartbeat()
+    {
+        if (_onlineClientStore is RedisOnlineClientStore redisStore)
+        {
+            await redisStore.RefreshHeartbeatAsync(Context.ConnectionId);
+        }
     }
 
     /// <summary>

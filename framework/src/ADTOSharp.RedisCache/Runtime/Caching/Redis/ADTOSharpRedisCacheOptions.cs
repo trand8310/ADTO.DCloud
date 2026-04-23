@@ -18,6 +18,36 @@ namespace ADTOSharp.Runtime.Caching.Redis
 
         public string OnlineClientsStoreKey = "ADTOSharp.RealTime.OnlineClients";
 
+        /// <summary>
+        /// 心跳 Key 前缀。
+        /// </summary>
+        public string OnlineClientHeartbeatKeyPrefix = "ADTOSharp.RealTime.OnlineClients.Heartbeat";
+
+        /// <summary>
+        /// 在线连接实例索引 Key 前缀。
+        /// </summary>
+        public string OnlineClientInstanceStoreKeyPrefix = "ADTOSharp.RealTime.OnlineClients.Instance";
+
+        /// <summary>
+        /// 心跳 TTL（秒）。
+        /// </summary>
+        public int OnlineClientHeartbeatTtlSeconds { get; set; } = 90;
+
+        /// <summary>
+        /// 心跳刷新间隔（秒）。
+        /// </summary>
+        public int OnlineClientHeartbeatRefreshIntervalSeconds { get; set; } = 30;
+
+        /// <summary>
+        /// 僵尸连接扫描间隔（秒）。
+        /// </summary>
+        public int OnlineClientCleanupIntervalSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// 每次清理扫描条数。
+        /// </summary>
+        public int OnlineClientCleanupBatchSize { get; set; } = 500;
+
         public string KeyPrefix { get; set; }
 
         public bool TenantKeyEnabled { get; set; }

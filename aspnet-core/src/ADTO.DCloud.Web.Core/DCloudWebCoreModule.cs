@@ -66,6 +66,20 @@ namespace ADTO.DCloud
                 options.ConnectionString = _appConfiguration["Configuration:RedisCache:ConnectionString"];
                 options.DatabaseId = _appConfiguration.GetValue<int>("Configuration:RedisCache:DatabaseId");
                 options.KeyPrefix = "DCloudv2";
+                options.OnlineClientsStoreKey = _appConfiguration["Configuration:RedisCache:OnlineClientsStoreKey"]
+                                                ?? options.OnlineClientsStoreKey;
+                options.OnlineClientHeartbeatKeyPrefix = _appConfiguration["Configuration:RedisCache:OnlineClientHeartbeatKeyPrefix"]
+                                                         ?? options.OnlineClientHeartbeatKeyPrefix;
+                options.OnlineClientInstanceStoreKeyPrefix = _appConfiguration["Configuration:RedisCache:OnlineClientInstanceStoreKeyPrefix"]
+                                                             ?? options.OnlineClientInstanceStoreKeyPrefix;
+                options.OnlineClientHeartbeatTtlSeconds = _appConfiguration.GetValue<int?>("Configuration:RedisCache:OnlineClientHeartbeatTtlSeconds")
+                                                          ?? options.OnlineClientHeartbeatTtlSeconds;
+                options.OnlineClientHeartbeatRefreshIntervalSeconds = _appConfiguration.GetValue<int?>("Configuration:RedisCache:OnlineClientHeartbeatRefreshIntervalSeconds")
+                                                                      ?? options.OnlineClientHeartbeatRefreshIntervalSeconds;
+                options.OnlineClientCleanupIntervalSeconds = _appConfiguration.GetValue<int?>("Configuration:RedisCache:OnlineClientCleanupIntervalSeconds")
+                                                             ?? options.OnlineClientCleanupIntervalSeconds;
+                options.OnlineClientCleanupBatchSize = _appConfiguration.GetValue<int?>("Configuration:RedisCache:OnlineClientCleanupBatchSize")
+                                                       ?? options.OnlineClientCleanupBatchSize;
             });
             #endregion
 
@@ -174,4 +188,3 @@ namespace ADTO.DCloud
         }
     }
 }
-
