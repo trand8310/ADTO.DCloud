@@ -3,6 +3,7 @@ using ADTO.DCloud.Configuration;
 using ADTO.DCloud.DataAuthorizes;
 using ADTO.DCloud.Identity;
 using ADTO.DCloud.Web.Chat.SignalR;
+using ADTO.DCloud.Web.Host.BackgroundJobs;
 using ADTO.DCloud.Web.Swagger;
 using ADTO.Swashbuckle;
 using ADTOSharp.AspNetCore;
@@ -129,6 +130,8 @@ namespace ADTO.DCloud.Web.Host.Startup
             //services.AddHostedService<DynamicTaskBackgroundService>();
 
             services.AddSignalR();
+
+            services.AddHostedService<SignalROnlineClientJanitorHostedService>();
 
 
             // Configure CORS for angular2 UI
@@ -387,4 +390,3 @@ namespace ADTO.DCloud.Web.Host.Startup
         }
     }
 }
-
