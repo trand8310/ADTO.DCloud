@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+  <Import Project="..\..\configureawait.props" />
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AssemblyName>ADTO.OpenIddict</AssemblyName>
+        <PackageId>ADTO.OpenIddict</PackageId>
+        <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;multitenancy;user management;role management;openiddict</PackageTags>
+        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <RootNamespace>ADTO</RootNamespace>
+        <Description>ADTO.OpenIddict</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="OpenIddict.Core" Version="7.2.0" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\ADTOSharp.ZeroCore\ADTOSharp.ZeroCore.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Update="Fody" Version="6.9.3" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,44 @@
+using System;
+using System.Threading.Tasks;
+using ADTOSharp.Dependency;
+using ADTOSharp.Domain.Repositories;
+using ADTOSharp.Domain.Uow;
+
+namespace ADTOSharp.EntityHistory
+{
+    /// <summary>
+    /// Implements <see cref="IEntityHistoryStore"/> to save entity change informations to database.
+    /// </summary>
+    public class EntityHistoryStore : IEntityHistoryStore, ITransientDependency
+    {
+        private readonly IRepository<EntityChangeSet, Guid> _changeSetRepository;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
+
+        /// <summary>
+        /// Creates a new <see cref="EntityHistoryStore"/>.
+        /// </summary>
+        public EntityHistoryStore(
+            IRepository<EntityChangeSet, Guid> changeSetRepository,
+            IUnitOfWorkManager unitOfWorkManager)
+        {
+            _changeSetRepository = changeSetRepository;
+            _unitOfWorkManager = unitOfWorkManager;
+        }
+
+        public virtual async Task SaveAsync(EntityChangeSet changeSet)
+        {
+            await _unitOfWorkManager.WithUnitOfWorkAsync(async () =>
+            {
+                await _changeSetRepository.InsertAsync(changeSet);
+            });
+        }
+
+        public virtual void Save(EntityChangeSet changeSet)
+        {
+            _unitOfWorkManager.WithUnitOfWork(() =>
+            {
+                _changeSetRepository.Insert(changeSet);
+            });
+        }
+    }
+}

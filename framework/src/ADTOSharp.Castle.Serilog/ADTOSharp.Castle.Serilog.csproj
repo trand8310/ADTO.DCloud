@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+  <Import Project="..\..\configureawait.props" />
+  
+  <PropertyGroup>
+	<TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>ADTOSharp.Castle.Serilog</AssemblyName>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <RootNamespace>ADTOSharp</RootNamespace>
+    <Description>ADTOSharp.Castle.Serilog</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADTOSharp\ADTOSharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Fody" Version="6.9.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

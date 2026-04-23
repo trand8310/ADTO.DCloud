@@ -1,0 +1,8 @@
+using Microsoft.AspNetCore.Mvc.Filters;
+
+namespace ADTOSharp.AspNetCore.Mvc.Results.Wrapping;
+
+public interface IADTOSharpActionResultWrapper
+{
+    void Wrap(FilterContext context);
+}

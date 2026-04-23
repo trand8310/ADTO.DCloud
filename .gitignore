@@ -1,0 +1,4 @@
+/aspnet-core/src/ADTO.CRM.Web.Host/App_Data/Logs
+/aspnet-core/src/ADTO.AuthServer/App_Data/Logs/Logs.txt
+/aspnet-core/src/ADTO.DCloud.Web.Host/App_Data/Logs
+.vs

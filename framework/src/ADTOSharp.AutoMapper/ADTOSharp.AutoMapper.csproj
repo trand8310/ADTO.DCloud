@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+  <Import Project="..\..\configureawait.props" />
+  
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>ADTOSharp.AutoMapper</AssemblyName>
+    <PackageId>ADTOSharp.AutoMapper</PackageId>
+    <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;automapper;object mapper</PackageTags>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <RootNamespace>ADTOSharp</RootNamespace>
+    <Description>ADTOSharp.AutoMapper</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADTOSharp\ADTOSharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="AutoMapper.Collection" Version="11.0.0" />
+  </ItemGroup>
+
+</Project>

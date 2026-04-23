@@ -1,0 +1,86 @@
+[
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/angularjs/adto.ng.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/angularjs/adto.ng.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/requirejs/plugins/service.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/requirejs/plugins/service.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.blockUI.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.blockUI.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.jquery.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.jquery.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.jtable.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.jtable.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.moment.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.moment.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.signalr.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.signalr.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.signalr-client.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.signalr-client.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.spin.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.spin.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.sweet-alert.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.sweet-alert.js"
+    ]
+  },
+    {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.sweet-alert2.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.sweet-alert2.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/libs/adto.toastr.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/libs/adto.toastr.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/utils/ie10fix.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/utils/ie10fix.js"
+    ]
+  },
+  {
+    "outputFileName": "ADTOSharp/Framework/scripts/adto.min.js",
+    "inputFiles": [
+      "ADTOSharp/Framework/scripts/adto.js"
+    ]
+  }
+]

@@ -1,0 +1,479 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Transactions;
+using ADTOSharp.Auditing;
+using ADTOSharp.Authorization.Roles;
+using ADTOSharp.Authorization.Users;
+using ADTOSharp.Configuration;
+using ADTOSharp.Configuration.Startup;
+using ADTOSharp.Dependency;
+using ADTOSharp.Domain.Repositories;
+using ADTOSharp.Domain.Uow;
+using ADTOSharp.Extensions;
+using ADTOSharp.IdentityFramework;
+using ADTOSharp.Localization;
+using ADTOSharp.MultiTenancy;
+using ADTOSharp.Zero.Configuration;
+using Microsoft.AspNetCore.Identity;
+
+namespace ADTOSharp.Authorization;
+
+public class ADTOSharpLogInManager<TTenant, TRole, TUser> : ITransientDependency
+    where TTenant : ADTOSharpTenant<TUser>
+    where TRole : ADTOSharpRole<TUser>, new()
+    where TUser : ADTOSharpUser<TUser>
+{
+    public IClientInfoProvider ClientInfoProvider { get; set; }
+
+    protected IMultiTenancyConfig MultiTenancyConfig { get; }
+    protected IRepository<TTenant,Guid> TenantRepository { get; }
+    protected IUnitOfWorkManager UnitOfWorkManager { get; }
+    protected ADTOSharpUserManager<TRole, TUser> UserManager { get; }
+    protected ISettingManager SettingManager { get; }
+    protected IRepository<UserLoginAttempt, Guid> UserLoginAttemptRepository { get; }
+    protected IUserManagementConfig UserManagementConfig { get; }
+    protected IIocResolver IocResolver { get; }
+    protected ADTOSharpRoleManager<TRole, TUser> RoleManager { get; }
+
+    private readonly IPasswordHasher<TUser> _passwordHasher;
+
+    private readonly ADTOSharpUserClaimsPrincipalFactory<TUser, TRole> _claimsPrincipalFactory;
+
+    public ADTOSharpLogInManager(
+        ADTOSharpUserManager<TRole, TUser> userManager,
+        IMultiTenancyConfig multiTenancyConfig,
+        IRepository<TTenant, Guid> tenantRepository,
+        IUnitOfWorkManager unitOfWorkManager,
+        ISettingManager settingManager,
+        IRepository<UserLoginAttempt, Guid> userLoginAttemptRepository,
+        IUserManagementConfig userManagementConfig,
+        IIocResolver iocResolver,
+        IPasswordHasher<TUser> passwordHasher,
+        ADTOSharpRoleManager<TRole, TUser> roleManager,
+        ADTOSharpUserClaimsPrincipalFactory<TUser, TRole> claimsPrincipalFactory)
+    {
+        _passwordHasher = passwordHasher;
+        _claimsPrincipalFactory = claimsPrincipalFactory;
+        MultiTenancyConfig = multiTenancyConfig;
+        TenantRepository = tenantRepository;
+        UnitOfWorkManager = unitOfWorkManager;
+        SettingManager = settingManager;
+        UserLoginAttemptRepository = userLoginAttemptRepository;
+        UserManagementConfig = userManagementConfig;
+        IocResolver = iocResolver;
+        RoleManager = roleManager;
+        UserManager = userManager;
+
+        ClientInfoProvider = NullClientInfoProvider.Instance;
+    }
+
+    public virtual async Task<ADTOSharpLoginResult<TTenant, TUser>> LoginAsync(UserLoginInfo login,
+        string tenancyName = null)
+    {
+        return await UnitOfWorkManager.WithUnitOfWorkAsync(async () =>
+        {
+            var result = await LoginAsyncInternal(login, tenancyName);
+
+            if (ShouldPreventSavingLoginAttempt(result))
+            {
+                return result;
+            }
+
+            await SaveLoginAttemptAsync(result, tenancyName, login.ProviderKey + "@" + login.LoginProvider);
+            return result;
+        });
+    }
+
+    protected virtual bool ShouldPreventSavingLoginAttempt(ADTOSharpLoginResult<TTenant, TUser> loginResult)
+    {
+        return loginResult.Result == ADTOSharpLoginResultType.Success && loginResult.User.IsTwoFactorEnabled;
+    }
+
+    protected virtual async Task<ADTOSharpLoginResult<TTenant, TUser>> LoginAsyncInternal(UserLoginInfo login,
+        string tenancyName)
+    {
+        if (login == null || login.LoginProvider.IsNullOrEmpty() || login.ProviderKey.IsNullOrEmpty())
+        {
+            throw new ArgumentException("login");
+        }
+
+        //Get and check tenant
+        TTenant tenant = null;
+        if (!MultiTenancyConfig.IsEnabled)
+        {
+            tenant = await GetDefaultTenantAsync();
+        }
+        else if (!string.IsNullOrWhiteSpace(tenancyName))
+        {
+            tenant = await TenantRepository.FirstOrDefaultAsync(t => t.TenancyName == tenancyName);
+            if (tenant == null)
+            {
+                return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.InvalidTenancyName);
+            }
+
+            if (!tenant.IsActive)
+            {
+                return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.TenantIsNotActive, tenant);
+            }
+        }
+
+        Guid? tenantId = tenant == null ? (Guid?)null : tenant.Id;
+        using (UnitOfWorkManager.Current.SetTenantId(tenantId))
+        {
+            var user = await UserManager.FindAsync(tenantId, login);
+            if (user == null)
+            {
+                return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.UnknownExternalLogin, tenant);
+            }
+
+            return await CreateLoginResultAsync(user, tenant);
+        }
+    }
+
+
+    public virtual async Task<ADTOSharpLoginResult<TTenant, TUser>> LoginAsync(
+        string userNameOrEmailAddress,
+        string plainPassword,
+        string tenancyName = null,
+        bool shouldLockout = true)
+    {
+        return await UnitOfWorkManager.WithUnitOfWorkAsync(async () =>
+        {
+            var result = await LoginAsyncInternal(
+                userNameOrEmailAddress,
+                plainPassword,
+                tenancyName,
+                shouldLockout
+            );
+
+            if (ShouldPreventSavingLoginAttempt(result))
+            {
+                return result;
+            }
+
+            await SaveLoginAttemptAsync(result, tenancyName, userNameOrEmailAddress);
+            return result;
+        });
+    }
+
+    protected virtual async Task<ADTOSharpLoginResult<TTenant, TUser>> LoginAsyncInternal(
+        string userNameOrEmailAddress,
+        string plainPassword,
+        string tenancyName,
+        bool shouldLockout)
+    {
+        if (userNameOrEmailAddress.IsNullOrEmpty())
+        {
+            throw new ArgumentNullException(nameof(userNameOrEmailAddress));
+        }
+
+        if (plainPassword.IsNullOrEmpty())
+        {
+            throw new ArgumentNullException(nameof(plainPassword));
+        }
+
+        // Get and check tenant
+        TTenant tenant = null;
+        using (UnitOfWorkManager.Current.SetTenantId(null))
+        {
+            if (!MultiTenancyConfig.IsEnabled)
+            {
+                tenant = await GetDefaultTenantAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(tenancyName))
+            {
+                tenant = await TenantRepository.FirstOrDefaultAsync(t => t.TenancyName == tenancyName);
+                if (tenant == null)
+                {
+                    return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.InvalidTenancyName);
+                }
+
+                if (!tenant.IsActive)
+                {
+                    return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.TenantIsNotActive, tenant);
+                }
+            }
+        }
+
+        var tenantId = tenant == null ? (Guid?)null : tenant.Id;
+        using (UnitOfWorkManager.Current.SetTenantId(tenantId))
+        {
+            await UserManager.InitializeOptionsAsync(tenantId);
+
+            //TryLoginFromExternalAuthenticationSources method may create the user, that's why we are calling it before ADTOSharpUserStore.FindByNameOrEmailAsync
+            var loggedInFromExternalSource = await TryLoginFromExternalAuthenticationSourcesAsync(
+                userNameOrEmailAddress,
+                plainPassword,
+                tenant
+            );
+
+            var user = await UserManager.FindByNameOrEmailAsync(tenantId, userNameOrEmailAddress);
+            if (user == null)
+            {
+                return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.InvalidUserNameOrEmailAddress, tenant);
+            }
+
+            if (await UserManager.IsLockedOutAsync(user))
+            {
+                return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.LockedOut, tenant, user);
+            }
+
+            if (!loggedInFromExternalSource)
+            {
+                if (!await UserManager.CheckPasswordAsync(user, plainPassword))
+                {
+                    if (shouldLockout && await TryLockOutAsync(user.TenantId, user.Id))
+                    {
+                        return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.LockedOut, tenant, user);
+                    }
+
+                    return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.InvalidPassword, tenant, user);
+                }
+
+                await UserManager.ResetAccessFailedCountAsync(user);
+            }
+
+            return await CreateLoginResultAsync(user, tenant);
+        }
+    }
+
+    protected virtual async Task<ADTOSharpLoginResult<TTenant, TUser>> CreateLoginResultAsync(TUser user,
+        TTenant tenant = null)
+    {
+        if (!user.IsActive)
+        {
+            return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.UserIsNotActive);
+        }
+
+        if (await IsEmailConfirmationRequiredForLoginAsync(user.TenantId) && !user.IsEmailConfirmed)
+        {
+            return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.UserEmailIsNotConfirmed);
+        }
+
+        if (await IsPhoneConfirmationRequiredForLoginAsync(user.TenantId) && !user.IsPhoneNumberConfirmed)
+        {
+            return new ADTOSharpLoginResult<TTenant, TUser>(ADTOSharpLoginResultType.UserPhoneNumberIsNotConfirmed);
+        }
+
+        var principal = await _claimsPrincipalFactory.CreateAsync(user);
+
+        return new ADTOSharpLoginResult<TTenant, TUser>(
+            tenant,
+            user,
+            principal.Identity as ClaimsIdentity
+        );
+    }
+
+    // Can be used after two-factor login
+    public virtual async Task SaveLoginAttemptAsync(
+        ADTOSharpLoginResult<TTenant, TUser> loginResult,
+        string tenancyName,
+        string userNameOrEmailAddress)
+    {
+        using (var uow = UnitOfWorkManager.Begin(TransactionScopeOption.Suppress))
+        {
+            var tenantId = loginResult.Tenant != null ? loginResult.Tenant.Id : (Guid?)null;
+            using (UnitOfWorkManager.Current.SetTenantId(tenantId))
+            {
+                var loginAttempt = new UserLoginAttempt
+                {
+                    TenantId = tenantId,
+                    TenancyName = tenancyName.TruncateWithPostfix(UserLoginAttempt.MaxTenancyNameLength),
+
+                    UserId = loginResult.User != null ? loginResult.User.Id : (Guid?)null,
+                    UserNameOrEmailAddress =
+                        userNameOrEmailAddress.TruncateWithPostfix(UserLoginAttempt
+                            .MaxUserNameOrEmailAddressLength),
+
+                    Result = loginResult.Result,
+
+                    BrowserInfo =
+                        ClientInfoProvider.BrowserInfo.TruncateWithPostfix(UserLoginAttempt.MaxBrowserInfoLength),
+                    ClientIpAddress =
+                        ClientInfoProvider.ClientIpAddress.TruncateWithPostfix(UserLoginAttempt
+                            .MaxClientIpAddressLength),
+                    ClientName =
+                        ClientInfoProvider.ComputerName.TruncateWithPostfix(UserLoginAttempt.MaxClientNameLength),
+                };
+
+                using (var localizationContext = IocResolver.ResolveAsDisposable<ILocalizationContext>())
+                {
+                    loginAttempt.FailReason = loginResult
+                        .GetFailReason(localizationContext.Object)
+                        .TruncateWithPostfix(UserLoginAttempt.MaxFailReasonLength);
+                }
+
+                await UserLoginAttemptRepository.InsertAsync(loginAttempt);
+                await UnitOfWorkManager.Current.SaveChangesAsync();
+
+                await uow.CompleteAsync();
+            }
+        }
+    }
+
+    public virtual void SaveLoginAttempt(
+        ADTOSharpLoginResult<TTenant, TUser> loginResult,
+        string tenancyName,
+        string userNameOrEmailAddress)
+    {
+        using (var uow = UnitOfWorkManager.Begin(TransactionScopeOption.Suppress))
+        {
+            var tenantId = loginResult.Tenant != null ? loginResult.Tenant.Id : (Guid?)null;
+            using (UnitOfWorkManager.Current.SetTenantId(tenantId))
+            {
+                var loginAttempt = new UserLoginAttempt
+                {
+                    TenantId = tenantId,
+                    TenancyName = tenancyName.TruncateWithPostfix(UserLoginAttempt.MaxTenancyNameLength),
+
+                    UserId = loginResult.User != null ? loginResult.User.Id : (Guid?)null,
+                    UserNameOrEmailAddress =
+                        userNameOrEmailAddress.TruncateWithPostfix(UserLoginAttempt
+                            .MaxUserNameOrEmailAddressLength),
+
+                    Result = loginResult.Result,
+
+                    BrowserInfo =
+                        ClientInfoProvider.BrowserInfo.TruncateWithPostfix(UserLoginAttempt.MaxBrowserInfoLength),
+                    ClientIpAddress =
+                        ClientInfoProvider.ClientIpAddress.TruncateWithPostfix(UserLoginAttempt
+                            .MaxClientIpAddressLength),
+                    ClientName =
+                        ClientInfoProvider.ComputerName.TruncateWithPostfix(UserLoginAttempt.MaxClientNameLength),
+                };
+
+                using (var localizationContext = IocResolver.ResolveAsDisposable<ILocalizationContext>())
+                {
+                    loginAttempt.FailReason = loginResult
+                        .GetFailReason(localizationContext.Object)
+                        .TruncateWithPostfix(UserLoginAttempt.MaxFailReasonLength);
+                }
+
+                UserLoginAttemptRepository.Insert(loginAttempt);
+                UnitOfWorkManager.Current.SaveChanges();
+
+                uow.Complete();
+            }
+        }
+    }
+
+    protected virtual async Task<bool> TryLockOutAsync(Guid? tenantId, Guid userId)
+    {
+        using (var uow = UnitOfWorkManager.Begin(TransactionScopeOption.Suppress))
+        {
+            using (UnitOfWorkManager.Current.SetTenantId(tenantId))
+            {
+                var user = await UserManager.FindByIdAsync(userId.ToString());
+
+                (await UserManager.AccessFailedAsync(user)).CheckErrors();
+
+                var isLockOut = await UserManager.IsLockedOutAsync(user);
+
+                await UnitOfWorkManager.Current.SaveChangesAsync();
+
+                await uow.CompleteAsync();
+
+                return isLockOut;
+            }
+        }
+    }
+
+    protected virtual async Task<bool> TryLoginFromExternalAuthenticationSourcesAsync(string userNameOrEmailAddress,
+        string plainPassword, TTenant tenant)
+    {
+        if (!UserManagementConfig.ExternalAuthenticationSources.Any())
+        {
+            return false;
+        }
+
+        foreach (var sourceType in UserManagementConfig.ExternalAuthenticationSources)
+        {
+            using (var source =
+                   IocResolver.ResolveAsDisposable<IExternalAuthenticationSource<TTenant, TUser>>(sourceType))
+            {
+                if (await source.Object.TryAuthenticateAsync(userNameOrEmailAddress, plainPassword, tenant))
+                {
+                    var tenantId = tenant == null ? (Guid?)null : tenant.Id;
+                    using (UnitOfWorkManager.Current.SetTenantId(tenantId))
+                    {
+                        var user = await UserManager.FindByNameOrEmailAsync(tenantId, userNameOrEmailAddress);
+                        if (user == null)
+                        {
+                            user = await source.Object.CreateUserAsync(userNameOrEmailAddress, tenant);
+
+                            user.TenantId = tenantId;
+                            user.AuthenticationSource = source.Object.Name;
+                            user.Password =
+                                _passwordHasher.HashPassword(user,
+                                    Guid.NewGuid().ToString("N")
+                                        .Left(16)); //Setting a random password since it will not be used
+                            user.SetNormalizedNames();
+
+                            if (user.Roles == null)
+                            {
+                                user.Roles = new List<UserRole>();
+                                foreach (var defaultRole in RoleManager.Roles
+                                             .Where(r => r.TenantId == tenantId && r.IsDefault).ToList())
+                                {
+                                    user.Roles.Add(new UserRole(tenantId, user.Id, defaultRole.Id));
+                                }
+                            }
+
+                            await UserManager.CreateAsync(user);
+                        }
+                        else
+                        {
+                            await source.Object.UpdateUserAsync(user, tenant);
+
+                            user.AuthenticationSource = source.Object.Name;
+
+                            await UserManager.UpdateAsync(user);
+                        }
+
+                        await UnitOfWorkManager.Current.SaveChangesAsync();
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    protected virtual async Task<TTenant> GetDefaultTenantAsync()
+    {
+        var tenant = await TenantRepository.FirstOrDefaultAsync(
+            t => t.TenancyName == ADTOSharpTenant<TUser>.DefaultTenantName
+        );
+        if (tenant == null)
+        {
+            throw new ADTOSharpException("There should be a 'Default' tenant if multi-tenancy is disabled!");
+        }
+
+        return tenant;
+    }
+
+    protected virtual async Task<bool> IsEmailConfirmationRequiredForLoginAsync(Guid? tenantId)
+    {
+        if (tenantId.HasValue)
+        {
+            return await SettingManager.GetSettingValueForTenantAsync<bool>(
+                ADTOSharpZeroSettingNames.UserManagement.IsEmailConfirmationRequiredForLogin,
+                tenantId.Value
+            );
+        }
+
+        return await SettingManager.GetSettingValueForApplicationAsync<bool>(
+            ADTOSharpZeroSettingNames.UserManagement.IsEmailConfirmationRequiredForLogin
+        );
+    }
+
+    protected virtual Task<bool> IsPhoneConfirmationRequiredForLoginAsync(Guid? tenantId)
+    {
+        return Task.FromResult(false);
+    }
+}

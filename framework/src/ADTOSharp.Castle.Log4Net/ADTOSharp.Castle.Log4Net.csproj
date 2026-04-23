@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+  <Import Project="..\..\configureawait.props" />
+  
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>ADTOSharp.Castle.Log4Net</AssemblyName>
+    <PackageId>ADTOSharp.Castle.Log4Net</PackageId>
+    <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;log4net;castle</PackageTags>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <RootNamespace>ADTOSharp</RootNamespace>
+    <Description>ADTOSharp.Castle.Log4Net</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADTOSharp\ADTOSharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="3.0.3" />
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Fody" Version="6.9.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

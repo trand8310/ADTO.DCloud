@@ -1,0 +1,49 @@
+﻿using ADTOSharp.Domain.Entities;
+using ADTOSharp.Domain.Entities.Auditing;
+using ADTOSharp.Extensions;
+using ADTOSharp.Timing;
+using System;
+
+namespace ADTOSharp.Dapper.Filters.Action
+{
+    public class ModificationAuditDapperActionFilter : DapperActionFilterBase, IDapperActionFilter
+    {
+        public void ExecuteFilter<TEntity, TPrimaryKey>(TEntity entity) where TEntity : class, IEntity<TPrimaryKey>
+        {
+            if (entity is IHasModificationTime)
+            {
+                entity.As<IHasModificationTime>().LastModificationTime = Clock.Now;
+            }
+
+            if (entity is IModificationAudited)
+            {
+                var record = entity.As<IModificationAudited>();
+                Guid? userId = GetAuditUserId();
+                if (userId == null || !userId.HasValue || userId == Guid.Empty)
+                {
+                    record.LastModifierUserId = null;
+                    return;
+                }
+
+                //Special check for multi-tenant entities
+                if (entity is IMayHaveTenant || entity is IMustHaveTenant)
+                {
+                    //Sets LastModifierUserId only if current user is in same tenant/host with the given entity
+                    if (entity is IMayHaveTenant && entity.As<IMayHaveTenant>().TenantId == ADTOSharpSession.TenantId ||
+                        entity is IMustHaveTenant && entity.As<IMustHaveTenant>().TenantId == ADTOSharpSession.TenantId)
+                    {
+                        record.LastModifierUserId = userId;
+                    }
+                    else
+                    {
+                        record.LastModifierUserId = null;
+                    }
+                }
+                else
+                {
+                    record.LastModifierUserId = userId;
+                }
+            }
+        }
+    }
+}

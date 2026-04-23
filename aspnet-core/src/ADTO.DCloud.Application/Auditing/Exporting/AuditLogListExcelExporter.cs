@@ -1,0 +1,70 @@
+﻿using System.Collections.Generic;
+using ADTO.DCloud.Auditing.Dto;
+using ADTO.DCloud.DataExporting.Excel.MiniExcel;
+using ADTO.DCloud.Dto;
+using ADTO.DCloud.Storage;
+using ADTOSharp.Extensions;
+using ADTOSharp.Runtime.Session;
+using ADTOSharp.Timing.Timezone;
+ 
+
+namespace ADTO.DCloud.Auditing.Exporting
+{
+    public class AuditLogListExcelExporter : MiniExcelExcelExporterBase, IAuditLogListExcelExporter
+    {
+        private readonly ITimeZoneConverter _timeZoneConverter;
+        private readonly IADTOSharpSession _adtosharpSession;
+        
+        public AuditLogListExcelExporter(
+            ITimeZoneConverter timeZoneConverter,
+            IADTOSharpSession adtosharpSession,
+            ITempFileCacheManager tempFileCacheManager)
+            : base(tempFileCacheManager)
+        {
+            _timeZoneConverter = timeZoneConverter;
+            _adtosharpSession = adtosharpSession;
+        }
+
+        public FileDto ExportToFile(List<AuditLogListDto> auditLogList)
+        {
+            var items = new List<Dictionary<string, object>>();
+
+            foreach (var auditLog in auditLogList)
+            {
+                items.Add(new Dictionary<string, object>()
+                {
+                    {L("Time"), _timeZoneConverter.Convert(auditLog.ExecutionTime, _adtosharpSession.TenantId, _adtosharpSession.GetUserId())},
+                    {L("UserName"), auditLog.UserName},
+                    {L("Service"), auditLog.ServiceName},
+                    {L("Action"), auditLog.MethodName},
+                    {L("Parameters"), auditLog.Parameters},
+                    {L("Duration"), auditLog.ExecutionDuration},
+                    {L("IpAddress"), auditLog.ClientIpAddress},
+                    {L("Client"), auditLog.ClientName},
+                    {L("Browser"), auditLog.BrowserInfo},
+                    {L("ErrorState"), auditLog.Exception.IsNullOrEmpty() ? L("Success") : auditLog.Exception},
+                });
+            }
+
+            return CreateExcelPackage("AuditLogs.xlsx", items);
+        }
+
+        public FileDto ExportToFile2(List<EntityChangeListDto> entityChangeList)
+        {
+            var items = new List<Dictionary<string, object>>();
+
+            foreach (var entityChange in entityChangeList)
+            {
+                items.Add(new Dictionary<string, object>()
+                {
+                    {L("Action"), entityChange.ChangeType.ToString()},
+                    {L("Object"), entityChange.EntityTypeFullName},
+                    {L("UserName"), entityChange.UserName},
+                    {L("Time"), _timeZoneConverter.Convert(entityChange.ChangeTime, _adtosharpSession.TenantId, _adtosharpSession.GetUserId())},
+                });
+            }
+
+            return CreateExcelPackage("DetailedLogs.xlsx", items);
+        }
+    }
+}

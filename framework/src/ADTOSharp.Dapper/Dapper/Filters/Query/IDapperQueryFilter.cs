@@ -1,0 +1,19 @@
+﻿using System;
+using System.Linq.Expressions;
+using ADTOSharp.Dapper_Extensions.Predicate;
+using ADTOSharp.Dependency;
+using ADTOSharp.Domain.Entities;
+
+namespace ADTOSharp.Dapper.Filters.Query
+{
+    public interface IDapperQueryFilter : ITransientDependency
+    {
+        string FilterName { get; }
+
+        bool IsEnabled { get; }
+
+        IFieldPredicate ExecuteFilter<TEntity, TPrimaryKey>() where TEntity : class, IEntity<TPrimaryKey>;
+
+        Expression<Func<TEntity, bool>> ExecuteFilter<TEntity, TPrimaryKey>(Expression<Func<TEntity, bool>> predicate) where TEntity : class, IEntity<TPrimaryKey>;
+    }
+}

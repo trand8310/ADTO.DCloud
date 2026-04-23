@@ -1,0 +1,41 @@
+﻿@import "adto.mixings.less";
+
+// COMMON STYLES //////////////////////////////////////////////////////////////
+
+.adto-clickable {
+    cursor: pointer;
+}
+
+// Docking
+
+.adto-dock-top {
+    .adto-dock(top);
+}
+
+.adto-dock-right {
+    .adto-dock(right);
+}
+
+.adto-dock-bottom {
+    .adto-dock(bottom);
+}
+
+.adto-dock-left {
+    .adto-dock(left);
+}
+
+//Busy indicator
+
+.adto-busy-indicator {
+
+}
+
+.adto-busy-indicator-small {
+    width: 36px;
+    height: 36px;
+
+    &.adto-dock-left, 
+    &.adto-dock-right {
+        height: auto;
+    }
+}

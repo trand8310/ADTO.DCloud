@@ -1,0 +1,22 @@
+using ADTOSharp.Application.Services.Dto;
+using System.Collections.Generic;
+
+
+namespace ADTO.DCloud.Localization.Dto
+{
+    public class GetLanguagesOutput : ListResultDto<ApplicationLanguageListDto>
+    {
+        public string DefaultLanguageName { get; set; }
+
+        public GetLanguagesOutput()
+        {
+            
+        }
+
+        public GetLanguagesOutput(IReadOnlyList<ApplicationLanguageListDto> items, string defaultLanguageName)
+            : base(items)
+        {
+            DefaultLanguageName = defaultLanguageName;
+        }
+    }
+}

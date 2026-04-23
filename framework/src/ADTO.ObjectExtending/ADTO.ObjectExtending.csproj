@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\configureawait.props" />
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <AssemblyName>ADTO.ObjectExtending</AssemblyName>
+    <PackageId>ADTO.ObjectExtending</PackageId>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <RootNamespace />
+  </PropertyGroup>
+
+  <ItemGroup>
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADTOSharp\ADTOSharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Fody" Version="6.9.3" />
+  </ItemGroup>
+
+</Project>

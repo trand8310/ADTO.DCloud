@@ -1,0 +1,52 @@
+using System;
+using System.Linq;
+using ADTOSharp.Collections.Extensions;
+using ADTOSharp.Configuration.Startup;
+using ADTOSharp.Dependency;
+using ADTOSharp.MultiTenancy;
+using Castle.Core.Logging;
+using Microsoft.AspNetCore.Http;
+
+namespace ADTOSharp.AspNetCore.MultiTenancy;
+
+public class HttpHeaderTenantResolveContributor : ITenantResolveContributor, ITransientDependency
+{
+    public ILogger Logger { get; set; }
+
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IMultiTenancyConfig _multiTenancyConfig;
+
+    public HttpHeaderTenantResolveContributor(
+        IHttpContextAccessor httpContextAccessor,
+        IMultiTenancyConfig multiTenancyConfig)
+    {
+        _httpContextAccessor = httpContextAccessor;
+        _multiTenancyConfig = multiTenancyConfig;
+
+        Logger = NullLogger.Instance;
+    }
+
+    public Guid? ResolveTenantId()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            return null;
+        }
+
+        var tenantIdHeader = httpContext.Request.Headers[_multiTenancyConfig.TenantIdResolveKey];
+        if (tenantIdHeader == string.Empty || tenantIdHeader.Count < 1)
+        {
+            return null;
+        }
+
+        if (tenantIdHeader.Count > 1)
+        {
+            Logger.Warn(
+                $"HTTP request includes more than one {_multiTenancyConfig.TenantIdResolveKey} header value. First one will be used. All of them: {tenantIdHeader.JoinAsString(", ")}"
+                );
+        }
+
+        return Guid.TryParse(tenantIdHeader.First(), out var tenantId) ? tenantId : (Guid?)null;
+    }
+}

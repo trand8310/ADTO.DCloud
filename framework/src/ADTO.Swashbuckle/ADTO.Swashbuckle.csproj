@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="..\..\common.props" />
+	<Import Project="..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <AssemblyName>ADTO.Swashbuckle</AssemblyName>
+        <PackageId>ADTO.Swashbuckle</PackageId>
+        <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+        <RootNamespace />
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <EmbeddedResource Include="wwwroot\swagger\ui\adto.swagger.js">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="wwwroot\swagger\ui\adto.js">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="wwwroot\swagger\oauth2-redirect.html" />
+      <EmbeddedResource Include="wwwroot\swagger\oauth2-redirect.html" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\ADTOSharp.AspNetCore\ADTOSharp.AspNetCore.csproj" />
+    </ItemGroup>
+
+	  <ItemGroup>
+    <PackageReference Update="Fody" Version="6.9.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

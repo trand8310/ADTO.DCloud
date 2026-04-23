@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+  <Import Project="..\..\configureawait.props" />
+  
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>ADTOSharp.EntityFramework.Common</AssemblyName>
+    <PackageId>ADTOSharp.EntityFramework.Common</PackageId>
+    <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;EntityFramework;ORM</PackageTags>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <RootNamespace>ADTOSharp.EntityFramework</RootNamespace>
+    <Description>ADTOSharp.EntityFramework.Common</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADTOSharp\ADTOSharp.csproj" />
+  </ItemGroup>
+
+</Project>

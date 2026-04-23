@@ -1,0 +1,62 @@
+using ADTOSharp.Authorization.Users;
+using ADTOSharp.Dependency;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Abstractions;
+using OpenIddict.Server.AspNetCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace ADTO.AspNetCore.OpenIddict.Controllers;
+
+public partial class TokenController<TTenant, TRole, TUser>
+{
+    protected virtual async Task<IActionResult> HandleRefreshTokenAsync(OpenIddictRequest request)
+    {
+        var principal = (await HttpContext.AuthenticateAsync(
+               OpenIddictServerAspNetCoreDefaults.AuthenticationScheme
+           )).Principal;
+
+        if (principal == null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = OpenIddictConstants.Errors.InvalidGrant,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The token is no longer valid."
+                }));
+        }
+
+        using (CurrentUnitOfWork.SetTenantId(FindTenantId(principal)))
+        {
+            var user = await UserManager.GetUserAsync(principal);
+            if (user == null)
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = OpenIddictConstants.Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The token is no longer valid."
+                    }));
+            }
+            // Ensure the user is still allowed to sign in.
+            if (!await PreSignInCheckAsync(user))
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = OpenIddictConstants.Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user is no longer allowed to sign in."
+                    }));
+            }
+
+            await OpenIddictClaimsPrincipalManager.HandleAsync(request, principal);
+
+            // Returning a SignInResult will ask OpenIddict to issue the appropriate access/identity tokens.
+            return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+    }
+}

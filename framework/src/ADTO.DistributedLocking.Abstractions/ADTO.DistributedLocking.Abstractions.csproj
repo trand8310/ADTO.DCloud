@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\..\common.props" />
+    <Import Project="..\..\configureawait.props" />
+    <PropertyGroup>
+        <TargetFrameworks>net9.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <AssemblyName>ADTO.DistributedLocking.Abstractions</AssemblyName>
+        <PackageId>ADTO.DistributedLocking.Abstractions</PackageId>
+        <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+        <RootNamespace />
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+        <PackageReference Include="AsyncKeyedLock" Version="7.1.7" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ADTOSharp\ADTOSharp.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Update="Fody" Version="6.9.3" />
+    </ItemGroup>
+
+</Project>

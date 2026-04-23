@@ -1,0 +1,32 @@
+﻿@using ADTOSharp.Configuration.Startup
+@using ADTOSharp.Web.Mvc.Alerts
+@using ADTOSharp.Web.Security.AntiForgery
+@using ADTO.AuthServer.Resources
+@inject IADTOSharpAntiForgeryManager ADTOSharpAntiForgeryManager
+@inject IMultiTenancyConfig MultiTenancyConfig
+@inject IWebResourceManager WebResourceManager
+@inject IAlertManager AlertManager
+@inject ILanguageManager LanguageManager
+@{
+    ADTOSharpAntiForgeryManager.SetCookie(Context);
+
+    var pageTitle = !string.IsNullOrWhiteSpace(ViewBag.Title) ? ViewBag.Title + " / " : "";
+    pageTitle += "AuthServer";
+}
+<!DOCTYPE html>
+<html lang="@LanguageManager.CurrentLanguage.Name">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>@pageTitle</title>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            @RenderBody()
+        </div>
+    </div>
+    @WebResourceManager.RenderScripts()
+</body>
+</html>

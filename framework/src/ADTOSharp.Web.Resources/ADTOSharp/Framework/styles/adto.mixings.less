@@ -1,0 +1,105 @@
+﻿// COMMON MIXINGS ///////////////////////////////////////////////////////////////////////
+
+//Clearing
+
+.adto-clear-margin-padding() {
+    padding: 0;
+    margin: 0;
+}
+
+.adto-clear-list-styles() {
+    .adto-clear-margin-padding;
+    list-style: none;
+}
+
+//Docking
+
+@adto-default-dock-margin: 0;
+
+.adto-dock(top, @margin: @adto-default-dock-margin) {
+    left: 0;
+    top: 0;
+    right: 0;
+}
+
+.adto-dock(right, @margin: @adto-default-dock-margin) {
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.adto-dock(bottom, @margin: @adto-default-dock-margin) {
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.adto-dock(left, @margin: @adto-default-dock-margin) {
+    left: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.adto-dock(top-left, @margin: @adto-default-dock-margin) {
+    left: 0;
+    top: 0;
+}
+
+.adto-dock(top-right, @margin: @adto-default-dock-margin) {
+    top: 0;
+    right: 0;
+}
+
+.adto-dock(bottom-right, @margin: @adto-default-dock-margin) {
+    bottom: 0;
+    right: 0;
+}
+
+.adto-dock(bottom-left, @margin: @adto-default-dock-margin) {
+    bottom: 0;
+    left: 0;
+}
+
+.adto-dock(@direction, @margin: @adto-default-dock-margin) {
+    position: absolute;
+    margin: @margin;
+}
+
+//Background
+
+.adto-vertical-gradient(@top_color, @bottom_color) {
+    background: @top_color; // Old browsers
+    background: -moz-linear-gradient(top, @top_color 0%, @bottom_color 100%); // FF3.6+
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,@top_color), color-stop(100%,@bottom_color)); // Chrome,Safari4+
+    background: -webkit-linear-gradient(top, @top_color 0%,@bottom_color 100%); // Chrome10+,Safari5.1+
+    background: -o-linear-gradient(top, @top_color 0%,@bottom_color 100%); // Opera 11.10+
+    background: -ms-linear-gradient(top, @top_color 0%,@bottom_color 100%); // IE10+
+    background: linear-gradient(to bottom, @top_color 0%,@bottom_color 100%); // W3C
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='@{top_color}', endColorstr='@{bottom_color}',GradientType=0 ); // IE6-9
+}
+
+.adto-horizontal-gradient(@left_color, @right_color) {
+    background: rgb(238,238,238); // Old browsers
+    background: -moz-linear-gradient(left, @left_color 0%, @right_color 100%); // FF3.6+
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%,@left_color), color-stop(100%,@right_color)); // Chrome,Safari4+
+    background: -webkit-linear-gradient(left, @left_color 0%,@right_color 100%); // Chrome10+,Safari5.1+
+    background: -o-linear-gradient(left, @left_color 0%,@right_color 100%); // Opera 11.10+
+    background: -ms-linear-gradient(left, @left_color 0%,@right_color 100%); // IE10+
+    background: linear-gradient(to right, @left_color 0%,@right_color 100%); // W3C
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='@{left_color}', endColorstr='@{right_color}',GradientType=1 ); // IE6-9
+}
+
+//Misc
+
+.adto-border-radius(@radius) {
+    -webkit-border-radius: @radius;
+    -moz-border-radius: @radius;
+    border-radius: @radius;
+}
+
+.adto-opacity(@value) {
+    opacity: @value;
+    //IE8 and earlier
+    @ieValue: @value * 100;
+    filter: alpha(opacity=@ieValue);
+}

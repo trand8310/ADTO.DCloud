@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <AssemblyName>ADTO.DCloud.Migrator</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>ADTO.DCloud.Migrator</PackageId>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="appsettings.json;log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
+	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ADTO.DCloud.Core\ADTO.DCloud.Core.csproj" />
+    <ProjectReference Include="..\ADTO.DCloud.EntityFrameworkCore\ADTO.DCloud.EntityFrameworkCore.csproj" />
+	<ProjectReference Include="..\..\..\framework\src\ADTOSharp.Castle.Log4Net\ADTOSharp.Castle.Log4Net.csproj" />
+  </ItemGroup>
+</Project>

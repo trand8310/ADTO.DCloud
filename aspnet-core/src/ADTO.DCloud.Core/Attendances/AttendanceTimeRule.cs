@@ -1,0 +1,46 @@
+﻿using ADTOSharp.Domain.Entities;
+using ADTOSharp.Domain.Entities.Auditing;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADTO.DCloud.Attendances
+{
+    /// <summary>
+    /// 考勤规则时间表
+    /// </summary>
+    [Description("考勤规则时间表"), Table("AttendanceTimeRules")]
+    public class AttendanceTimeRule : FullAuditedEntity<Guid>, IPassivable, IRemark, IDisplayOrder
+    {
+        /// <summary>
+        /// 规则名称
+        /// </summary>
+        public string RuleName { get; set; }
+        /// <summary>
+        /// 规则备注
+        /// </summary>
+        public string Remark { get; set; }
+        /// <summary>
+        /// 规则排序
+        /// </summary>
+        public int DisplayOrder { get; set; }
+        /// <summary>
+        /// 是否启用
+        /// </summary>
+        public bool IsActive { get; set; }
+        /// <summary>
+        /// 考勤时间集合
+        /// </summary>
+        public string AttendanceTimeIds { get; set; }
+        /// <summary>
+        /// 考勤机区域-考勤地点
+        /// </summary>
+        public AttendanceLocation? Location { get; set; }
+        public virtual Guid? LocationId { get; set; }
+    }
+}

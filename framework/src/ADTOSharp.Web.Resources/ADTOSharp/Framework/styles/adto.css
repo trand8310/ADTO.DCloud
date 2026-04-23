@@ -1,0 +1,40 @@
+﻿.adto-clickable {
+  cursor: pointer;
+}
+.adto-dock-top {
+  left: 0;
+  top: 0;
+  right: 0;
+  position: absolute;
+  margin: 0;
+}
+.adto-dock-right {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  margin: 0;
+}
+.adto-dock-bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  position: absolute;
+  margin: 0;
+}
+.adto-dock-left {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  margin: 0;
+}
+.adto-busy-indicator-small {
+  width: 36px;
+  height: 36px;
+}
+.adto-busy-indicator-small.adto-dock-left,
+.adto-busy-indicator-small.adto-dock-right {
+  height: auto;
+}
+/*# sourceMappingURL=adto.css.map */

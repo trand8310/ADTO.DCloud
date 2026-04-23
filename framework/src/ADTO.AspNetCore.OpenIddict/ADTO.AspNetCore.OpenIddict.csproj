@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+  <Import Project="..\..\configureawait.props" />
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AssemblyName>ADTO.AspNetCore.OpenIddict</AssemblyName>
+        <PackageId>ADTO.AspNetCore.OpenIddict</PackageId>
+        <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;asp.net core;openiddict</PackageTags>
+        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <RootNamespace>ADTOSharp</RootNamespace>
+        <Description>ADTO.AspNetCore.OpenIddict</Description>
+        <IsPackable>true</IsPackable>
+        <OutputType>Library</OutputType>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="FluentMigrator" Version="7.1.0" />
+        <PackageReference Include="Microsoft.Bcl.Cryptography" Version="9.0.10" />
+        <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\ADTO.OpenIddict\ADTO.OpenIddict.csproj" />
+      <ProjectReference Include="..\ADTOSharp.AspNetCore\ADTOSharp.AspNetCore.csproj" />
+      <ProjectReference Include="..\ADTOSharp.ZeroCore\ADTOSharp.ZeroCore.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Update="Fody" Version="6.9.3" />
+    </ItemGroup>
+</Project>
