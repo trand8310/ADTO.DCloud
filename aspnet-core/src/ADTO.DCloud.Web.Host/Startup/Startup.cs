@@ -2,6 +2,7 @@
 using ADTO.DCloud.Chat.WS;
 using ADTO.DCloud.Configuration;
 using ADTO.DCloud.Identity;
+using ADTO.DCloud.Notifications.WS;
 using ADTO.DCloud.Web.Chat.SignalR;
 using ADTO.DCloud.Web.Host.BackgroundJobs;
 using ADTO.DCloud.Web.Swagger;
@@ -236,6 +237,7 @@ namespace ADTO.DCloud.Web.Host.Startup
             app.UseJwtTokenMiddleware();
             app.UseAuthorization();
             app.UseMiddleware<ChatWebSocketMiddleware>();
+            app.UseMiddleware<NotificationWebSocketMiddleware>();
             app.UseADTOSharpRequestLocalization();
 
             // js 脚本引擎
