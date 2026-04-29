@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Channels;
 
 namespace ADTO.DCloud.Tasks.TaskManage
 {
@@ -22,6 +23,11 @@ namespace ADTO.DCloud.Tasks.TaskManage
         private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _taskLocks = new();
         private readonly SemaphoreSlim _reloadLock = new(1, 1);
         private readonly ITaskSchedulerAppService _taskSchedulerAppService;
+        private readonly Channel<Guid> _taskQueue = Channel.CreateUnbounded<Guid>();
+        private readonly CancellationTokenSource _workerCts = new();
+        private readonly List<Task> _queueWorkers = new();
+        private readonly int _consumerCount = Math.Max(2, Environment.ProcessorCount / 2);
+        private int _workersStarted;
         public DynamicTaskManager(
             IServiceProvider serviceProvider,
             IEnumerable<ICycleConfigParser> cycleParsers,
@@ -36,6 +42,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
         public async Task InitializeAsync()
         {
+            StartQueueWorkers();
             await ReloadTasksAsync();
         }
 
@@ -75,6 +82,45 @@ namespace ADTO.DCloud.Tasks.TaskManage
             }
         }
 
+
+        private void StartQueueWorkers()
+        {
+            if (Interlocked.Exchange(ref _workersStarted, 1) == 1)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _consumerCount; i++)
+            {
+                _queueWorkers.Add(Task.Run(() => ConsumeQueueAsync(_workerCts.Token)));
+            }
+
+            _logger.LogInformation("Started {Count} scheduler consumers.", _consumerCount);
+        }
+
+        private async Task ConsumeQueueAsync(CancellationToken cancellationToken)
+        {
+            await foreach (var taskId in _taskQueue.Reader.ReadAllAsync(cancellationToken))
+            {
+                try
+                {
+                    await ExecuteTaskAsync(taskId);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Task consumer failed for task {TaskId}", taskId);
+                }
+                finally
+                {
+                    await RescheduleTaskAsync(taskId);
+                }
+            }
+        }
+
         private async Task ScheduleTaskAsync(TaskSchedulerDto taskConfig)
         {
             var parser = _cycleParsers.FirstOrDefault(p => p.CanParse(taskConfig.CycleType));
@@ -104,7 +150,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
             // 创建单次触发定时器，执行完成后按配置重新计算下次触发时间
             var timer = new Timer(
-                async _ => await ExecuteAndRescheduleTaskAsync(taskConfig.Id),
+                _ => EnqueueTask(taskConfig.Id),
                 null,
                 initialDelay,
                 Timeout.InfiniteTimeSpan);
@@ -203,15 +249,11 @@ namespace ADTO.DCloud.Tasks.TaskManage
         }
 
 
-        private async Task ExecuteAndRescheduleTaskAsync(Guid taskId)
+        private void EnqueueTask(Guid taskId)
         {
-            try
+            if (!_taskQueue.Writer.TryWrite(taskId))
             {
-                await ExecuteTaskAsync(taskId);
-            }
-            finally
-            {
-                await RescheduleTaskAsync(taskId);
+                _logger.LogWarning("Failed to enqueue task: {TaskId}", taskId);
             }
         }
 
@@ -372,6 +414,10 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
         public void Dispose()
         {
+            _workerCts.Cancel();
+            _taskQueue.Writer.TryComplete();
+            Task.WhenAll(_queueWorkers).GetAwaiter().GetResult();
+            _workerCts.Dispose();
             _reloadLock?.Dispose();
             foreach (var item in _taskLocks.Values)
             {
