@@ -209,6 +209,7 @@ namespace ADTO.DCloud.ApplicationForm.Onb
         (a.EndDate.Date >= input.StartDate && a.EndDate.Date <= input.EndDate) ||
         (input.StartDate >= a.StartDate.Date && input.StartDate <= a.EndDate.Date) ||
         (input.EndDate >= a.StartDate.Date && input.EndDate <= a.EndDate.Date))
+                .WhereIf(input.UserId.HasValue && input.UserId != Guid.Empty, x => x.UserId.Equals(input.UserId))
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword) || x.UserName.Equals(input.Keyword));
 
             var list = await query.ToListAsync();

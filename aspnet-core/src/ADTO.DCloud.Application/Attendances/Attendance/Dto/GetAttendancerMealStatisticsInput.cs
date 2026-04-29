@@ -1,4 +1,6 @@
-﻿using ADTO.DCloud.Infrastructure;
+﻿using ADTO.DCloud.Dto;
+using ADTO.DCloud.Infrastructure;
+using ADTOSharp.Runtime.Validation;
 using ADTOSharp.Timing;
 using System;
 using System.Collections.Generic;
@@ -9,8 +11,9 @@ using System.Threading.Tasks;
 
 namespace ADTO.DCloud.Attendances.Attendance.Dto
 {
-    public class UpdateAttendanceLogsRequestDto
+    public class GetAttendancerMealStatisticsInput : PagedAndSortedInputDto, IShouldNormalize
     {
+
         /// <summary>
         /// 关键词
         /// </summary>
@@ -21,14 +24,14 @@ namespace ADTO.DCloud.Attendances.Attendance.Dto
         /// </summary>
         [DisableDateTimeNormalization]
         [JsonConverter(typeof(OnlyDateConverter))]
-        public DateTime StartDate { get; set; } = DateTime.Now;
+        public DateTime StartDate { get; set; }
 
         /// <summary>
         /// 结束日期
         /// </summary>
         [DisableDateTimeNormalization]
         [JsonConverter(typeof(OnlyDateConverter))]
-        public DateTime EndDate { get; set; } = DateTime.Now;
+        public DateTime EndDate { get; set; }
 
         /// <summary>
         /// 所属公司
@@ -39,22 +42,11 @@ namespace ADTO.DCloud.Attendances.Attendance.Dto
         /// 所属部门
         /// </summary>
         public Guid? DepartmentId { get; set; }
-        /// <summary>
-        /// 用户基础信息设置的考勤区域
-        /// </summary>
-        public Guid? AreaId { get; set; }
 
-        /// <summary>
-        /// 考勤状态
-        /// </summary>
-        public string[] Status { get; set; }
-        /// <summary>
-        /// 考勤状态Id
-        /// </summary>
-        public List<Guid> IdList { get; set; }
-        /// <summary>
-        /// 用户Id
-        /// </summary>
-        public Guid UserId { get; set; }
+
+        public void Normalize()
+        {
+            Keyword = Keyword?.Trim();
+        }
     }
 }

@@ -66,8 +66,10 @@ namespace ADTO.DCloud
                 options.ConnectionString = _appConfiguration["Configuration:RedisCache:ConnectionString"];
                 options.DatabaseId = _appConfiguration.GetValue<int>("Configuration:RedisCache:DatabaseId");
                 options.KeyPrefix = "DCloudv2";
+
                 options.OnlineClientsStoreKey = _appConfiguration["Configuration:RedisCache:OnlineClientsStoreKey"]
-                                                ?? options.OnlineClientsStoreKey;
+                                ?? options.OnlineClientsStoreKey;
+
                 options.OnlineClientHeartbeatKeyPrefix = _appConfiguration["Configuration:RedisCache:OnlineClientHeartbeatKeyPrefix"]
                                                          ?? options.OnlineClientHeartbeatKeyPrefix;
                 options.OnlineClientInstanceStoreKeyPrefix = _appConfiguration["Configuration:RedisCache:OnlineClientInstanceStoreKeyPrefix"]
@@ -81,6 +83,10 @@ namespace ADTO.DCloud
                 options.OnlineClientCleanupBatchSize = _appConfiguration.GetValue<int?>("Configuration:RedisCache:OnlineClientCleanupBatchSize")
                                                        ?? options.OnlineClientCleanupBatchSize;
             });
+
+
+
+
             #endregion
 
             //Configuration.Modules.ADTOSharpAspNetCore().UseMvcDateTimeFormatForAppServices = true;
@@ -188,3 +194,4 @@ namespace ADTO.DCloud
         }
     }
 }
+

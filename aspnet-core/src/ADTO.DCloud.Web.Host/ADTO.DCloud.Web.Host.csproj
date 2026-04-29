@@ -38,7 +38,7 @@
 		<ProjectReference Include="..\ADTO.DCloud.Web.Core\ADTO.DCloud.Web.Core.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="DistributedLock.Redis" Version="1.0.3" />
+		<PackageReference Include="DistributedLock.Redis" Version="1.1.1" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="9.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.8" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">

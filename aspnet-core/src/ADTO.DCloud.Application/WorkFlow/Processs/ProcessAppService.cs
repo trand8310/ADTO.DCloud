@@ -36,6 +36,7 @@ using ADTOSharp.Runtime.Session;
 using ADTOSharp.Threading.Extensions;
 using ADTOSharp.UI;
 using ADTOSharp.Zero.Configuration;
+using MathNet.Numerics.Distributions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -150,7 +151,7 @@ namespace ADTO.DCloud.WorkFlow.Processs
         #endregion
 
         #region Methods
-          /// <summary>
+        /// <summary>
         /// 获取我的已办任务-数量
         /// </summary>
         /// <returns></returns>
@@ -2083,6 +2084,9 @@ namespace ADTO.DCloud.WorkFlow.Processs
 
                 //执行节点回调函数
                 await ExecuteInvokeMethod(iWFEngine.StartNode, iWFEngine, processEntity.Id, des, "Create");
+
+
+
                 // 脚本执行
                 var scriptTaskList = myTaskList.FindAll(t => t.Type == 10);
                 foreach (var item in scriptTaskList)
@@ -3618,7 +3622,7 @@ namespace ADTO.DCloud.WorkFlow.Processs
                 await LockExtensions.Locking(input.ProcessId.ToString(), async _ =>
                 {
                     var iWFEngine = await Bootstraper("", input.ProcessId, null, null, null, string.Empty, null);
-                    var task =await _taskRepository.FirstOrDefaultAsync(x => x.Id.Equals(input.TaskId));
+                    var task = await _taskRepository.FirstOrDefaultAsync(x => x.Id.Equals(input.TaskId));
                     foreach (var userId in input.UserIds.Split(','))
                     {
                         var addItem = task.ToJson().ToObject<WorkFlowTask>();
@@ -4419,11 +4423,11 @@ namespace ADTO.DCloud.WorkFlow.Processs
             {
                 var formData = new DataTable();
                 //获取表单数据
-                if (!string.IsNullOrEmpty(node.ServiceInvokeParameters))
-                {
-                    formData = await _formSchemeAppService.GetCustmerFormDataTable(processId, node.ServiceInvokeParameters);
-                }
-                await _invokeMethodHelper.InvokeByNameAsync(node.ServerCallbackFun, new object[] { isAgree, processId, des, formData.ToJson() });
+                //if (node.ServerCallbackFunParameters != null && node.ServerCallbackFunParameters.Count > 0)
+                //{
+                //    formData = await _formSchemeAppService.GetCustmerFormDataTable(processId, node.ServerCallbackFunParameters[0].value);
+                //}
+                await _invokeMethodHelper.InvokeByNameAsync(node.ServerCallbackFun, new object[] {  processId, iWFEngine.Config.Params.SchemeCode });
             }
         }
         #endregion

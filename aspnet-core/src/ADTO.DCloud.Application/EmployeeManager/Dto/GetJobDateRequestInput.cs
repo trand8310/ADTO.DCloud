@@ -32,16 +32,12 @@ namespace ADTO.DCloud.EmployeeManager.Dto
         /// <summary>
         /// 所属部门
         /// </summary>
-        public long? DepartmentId { get; set; }
+        public Guid? DepartmentId { get; set; }
 
         /// <summary>
         /// 打卡类型--是否考勤（0：双休打卡/1：固定打卡/2：单休打卡/3：排班打卡，4：大小周，5：不打卡）
         /// </summary>
         public int? IsAttType { get; set; }
-        /// <summary>
-        /// 考勤区域
-        /// </summary>
-        public int? AreaId { get; set; }
         /// <summary>
         /// 办公地点
         /// </summary>
@@ -52,8 +48,8 @@ namespace ADTO.DCloud.EmployeeManager.Dto
         /// </summary>	
         public Guid? AttTimeRuleId { get; set; }
         /// <summary>
-        /// 是否分页
+        /// 用户Id
         /// </summary>
-        public bool IsPage { get; set; }
+        public Guid? UserId { get; set; }
     }
 }

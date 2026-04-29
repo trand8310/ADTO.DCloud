@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using ADTO.DCloud.Dto;
 
-
-
 namespace ADTO.DCloud.Common.Dto;
 
 public class FindUsersInput : PagedAndFilteredInputDto
 {
+    public FindUsersInput()
+    {
+        DepartmentIds = new List<Guid>();
+    }
     /// <summary>
     /// 租户Id
     /// </summary>
@@ -32,4 +34,9 @@ public class FindUsersInput : PagedAndFilteredInputDto
     /// 用户Id组合
     /// </summary>
     public List<Guid> Ids { get; set; }
+
+    /// <summary>
+    /// 多部门ID
+    /// </summary>
+    public List<Guid> DepartmentIds { get; set; }
 }

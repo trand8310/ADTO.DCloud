@@ -648,21 +648,24 @@ namespace ADTO.DCloud.DataAuthorizes
         /// 获取方法返回dto字段
         /// </summary>
         /// <returns></returns>
-        public async Task<List<PropertiesDto>>  GetDtoProperties(GetDtoPropertiesInput input)
+        public async Task<List<PropertiesDto>> GetDtoProperties(GetDtoPropertiesInput input)
         {
             // 获取属性及备注
             Type serviceType = Type.GetType(input.ServiceName);
-            if (serviceType == null)
-            {
-                serviceType = AppDomain.CurrentDomain.GetAssemblies()
-                    .Select(a => a.GetType(input.ServiceName))
-                    .FirstOrDefault(t => t != null);
-            }
+            //传命名空间和服务名，直接找
+            serviceType = serviceType == null ? AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetType(input.ServiceName))
+                .FirstOrDefault(t => t != null) : serviceType;
+            //全局扫，不用传命名空间
+            serviceType = serviceType == null ? AppDomain.CurrentDomain.GetAssemblies()
+               .SelectMany(a => a.GetTypes())
+               .FirstOrDefault(t => t.Name == input.ServiceName) : serviceType;
+
             if (serviceType == null)
                 throw new ADTOSharpException($"无法找到类型{input.ServiceName}");
 
             var props = DtoMetadataHelper.GetDtoPropertiesWithRemarks(serviceType, input.MethodName);
-       
+
             return props;
         }
         #endregion

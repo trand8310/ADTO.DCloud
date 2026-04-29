@@ -27,14 +27,14 @@ namespace ADTO.OA.Surveys.QuestionCategorys
 
         #region 查询所有题库类型
         /// <summary>
-        /// 查询所有题库类型
+        /// 查询所有题库类型 GetAllList
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
         //[DataPermission("题库类型")]
-        public async Task<List<QuestionCategoryDto>> GetAllList(QuestionCategoryRequestDto input)
+        public async Task<List<QuestionCategoryDto>> GetQuestionCategoryList()
         {
-            var query = await this._categoryRepository.GetAll().WhereIf(!string.IsNullOrEmpty(input.keyword), q => q.Name.Contains(input.keyword)).ToListAsync();
+            var query = await this._categoryRepository.GetAll().Where(p => p.IsActive == true).ToListAsync();
 
             var ResultList = ObjectMapper.Map<List<QuestionCategoryDto>>(query);
             return ResultList;

@@ -1,4 +1,6 @@
-﻿using ADTOSharp.Application.Services.Dto;
+﻿using ADTO.DCloud.ApplicationForm;
+using ADTOSharp.Application.Services.Dto;
+using ADTOSharp.AutoMapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +9,17 @@ using System.Threading.Tasks;
 
 namespace ADTO.DCloud.Attendances.Attendance.Dto
 {
-    public class CHECKINOUTDto : EntityDto<Guid>
+    [AutoMap(typeof(CHECKINOUT))]
+    public class CHECKINOUTDto 
     {
+        /// <summary>
+        /// 用户Id-考勤机用户Id
+        /// </summary>
+        public int UserInfoId { get; set; }
         /// <summary>
         /// 用户Id
         /// </summary>
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
         /// <summary>
         /// 考勤时间
         /// </summary>
@@ -44,6 +51,10 @@ namespace ADTO.DCloud.Attendances.Attendance.Dto
         /// 用户名
         /// </summary>
         public string UserName { get; set; }
+        /// <summary>
+        /// 办公位置
+        /// </summary>
+        public string OfficeLocation { get; set; }
         #endregion
     }
 }

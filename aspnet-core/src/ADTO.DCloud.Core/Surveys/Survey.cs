@@ -35,7 +35,8 @@ namespace ADTO.DCloud.Surveys
         public int Timer { get; set; }
 
         /// <summary>
-        /// 题库来源
+        /// 题库来源(题库分类Id,多选 按逗号分隔)
+        /// 714e1e63-5f73-4c75-9b07-08db9e22cebc,5eee37c6-69e5-4906-9b08-08db9e22cebc,02854d0e-3b26-4136-88f2-b967222de344
         /// </summary>
         [StringLength(225)]
         public string QuestionSource { get; set; }

@@ -24,7 +24,7 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers.Dto
         /// </summary>
         public long UserId { get; set; }
         /// <summary>
-        /// 答卷状态(1=尚未收到问卷,2=已收到问卷,3=已开始答卷,4=已交卷,5=已收到回执)
+        /// 答卷状态(0=未答卷,2=已交卷,3=已阅卷)
         /// </summary>
         public int AnswerStatus { get; set; }
         /// <summary>

@@ -35,7 +35,7 @@
 		<PackageReference Include="JavaScriptEngineSwitcher.Jurassic" Version="3.27.3" />
 		<PackageReference Include="MiniExcel" Version="1.37.0" />
 		<PackageReference Include="NPOI" Version="2.7.6" />
-		<PackageReference Include="StackExchange.Redis" Version="2.8.58" />
+		<PackageReference Include="StackExchange.Redis" Version="2.12.14" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
 	</ItemGroup>
 

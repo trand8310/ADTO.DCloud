@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -118,8 +119,59 @@ namespace ADTO.DCloud.Infrastructure
                 throw new InvalidOperationException($"调用方法失败: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
+        private static object ConvertParameter(object rawValue, Type targetType)
+        {
+            if (rawValue == null)
+            {
+                return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+            }
 
-        private object ConvertParameter(object value, Type targetType)
+            Type sourceType = rawValue.GetType();
+            if (targetType == typeof(Guid) && rawValue is string strGuid)
+                return Guid.Parse(strGuid);
+            if (targetType == typeof(string) && rawValue is Guid guid)
+                return guid.ToString();
+            // 目标类型是字符串，但原始值是数组或集合（且不是字符串）
+            if (targetType == typeof(string) && !(rawValue is string) && rawValue is IEnumerable enumerable)
+            {
+                // 方案1：转为 JSON 字符串（推荐，保留完整结构）
+                return System.Text.Json.JsonSerializer.Serialize(rawValue);
+
+                // 方案2：转为逗号分隔（适用于简单类型数组）
+                // var items = enumerable.Cast<object>().Select(x => x?.ToString());
+                // return string.Join(",", items);
+            }
+
+            // 处理 Nullable<T>
+            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                Type innerType = targetType.GetGenericArguments()[0];
+                return Convert.ChangeType(rawValue, innerType);
+            }
+
+            // 枚举转换
+            if (targetType.IsEnum)
+            {
+                return Enum.ToObject(targetType, Convert.ChangeType(rawValue, Enum.GetUnderlyingType(targetType)));
+            }
+
+            // 常规类型转换
+            try
+            {
+                return Convert.ChangeType(rawValue, targetType);
+            }
+            catch
+            {
+                // 如果转换失败，可以尝试 JSON 反序列化（复杂对象转目标类型）
+                if (targetType.IsClass && targetType != typeof(string))
+                {
+                    var json = System.Text.Json.JsonSerializer.Serialize(rawValue);
+                    return System.Text.Json.JsonSerializer.Deserialize(json, targetType);
+                }
+                throw; // 或者返回默认值
+            }
+        }
+        private object ConvertParameter_old(object value, Type targetType)
         {
             if (value == null || value.GetType() == targetType)
                 return value;
@@ -148,52 +200,6 @@ namespace ADTO.DCloud.Infrastructure
             return type.IsValueType ? Activator.CreateInstance(type) : null;
         }
 
-        public Type GetType1(string typeName)
-        {
-            // 首先尝试从已加载程序集查找
-            var type = Type.GetType(typeName);
-            if (type != null) return type;
-
-            // 尝试解析程序集名称并加载
-            var assemblyName = typeName.Split(',')[1].Trim();
-            var assembly = LoadAssembly(assemblyName);
-            return assembly?.GetType(typeName.Split(',')[0]);
-        }
-
-        public Type GetType2(string namespaceName, string className)
-        {
-            var fullName = $"{namespaceName}.{className}";
-
-            // 1. 从已加载程序集查找
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var type = assembly.GetType(fullName);
-                if (type != null) return type;
-            }
-
-            // 2. 尝试加载程序集
-            var assemblyName = namespaceName.Split('.')[0];
-            var loadedAssembly = LoadAssembly(assemblyName);
-            return loadedAssembly?.GetType(fullName);
-        }
-
-        public Assembly LoadAssembly(string assemblyName)
-        {
-            return _assemblyCache.GetOrAdd(assemblyName, name =>
-            {
-                try
-                {
-                    // 尝试通过名称加载
-                    return Assembly.Load(new AssemblyName(name));
-                }
-                catch
-                {
-                    // 尝试从文件加载
-                    var path = Path.Combine(AppContext.BaseDirectory, $"{name}.dll");
-                    return File.Exists(path) ? Assembly.LoadFrom(path) : null;
-                }
-            });
-        }
         private Type FindTypeByName(string className)
         {
             try

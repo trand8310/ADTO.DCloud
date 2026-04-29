@@ -93,6 +93,7 @@ namespace ADTO.DCloud.DataAuthorizes
             var parameter = Expression.Parameter(typeof(T), "x");
             var expressions = new Dictionary<string, Expression>();
             int index = 1;
+            List<PropertiesDto> filedList = new List<PropertiesDto>();
             try
             {
                 foreach (var auth in dataAuth)
@@ -100,7 +101,7 @@ namespace ADTO.DCloud.DataAuthorizes
                     #region 字段权限
                     if (string.IsNullOrEmpty(auth.Fields))
                     {
-                        var field = auth.Fields.ToList<PropertiesDto>();
+                        result.DataAuthFields = filedList.Count() > 0 ? MergeWithCondition(filedList, auth.Fields.ToList<PropertiesDto>()).ToJson() : auth.Fields;// auth.Fields.ToList<PropertiesDto>();
                     }
                     //auth.Fields
                     #endregion
@@ -153,7 +154,35 @@ namespace ADTO.DCloud.DataAuthorizes
                 throw new UserFriendlyException("数据权限报错:" + ex.Message);
             }
         }
-
+        /// <summary>
+        /// 合并两个数组，以 field 为键。
+        /// 规则：
+        /// 1. 若第一个数组中某元素的 view == false，则用第二个数组中同 field 的元素覆盖（整个对象）。
+        /// 2. 将第二个数组中存在于第一个数组中不存在的元素追加到结果中。
+        /// </summary>
+        public static List<PropertiesDto> MergeWithCondition(List<PropertiesDto> first, List<PropertiesDto> second)
+        {
+            // 用字典存储第一个数组，便于查找
+            var dict = first.ToDictionary(x => x.Field);
+            foreach (var secondItem in second)
+            {
+                if (dict.TryGetValue(secondItem.Field, out var firstItem))
+                {
+                    // 如果第一个数组中的该项 view == false，则用第二个数组的整个对象覆盖
+                    if (firstItem.View == false)
+                    {
+                        dict[secondItem.Field] = secondItem;
+                    }
+                    // 否则保留第一个数组的原值（不做任何修改）
+                }
+                else
+                {
+                    // 第二个数组有而第一个数组没有的项，直接添加
+                    dict[secondItem.Field] = secondItem;
+                }
+            }
+            return dict.Values.ToList();
+        }
         /// <summary>
         /// 创建数据查询,返回带字段
         /// </summary>

@@ -1,4 +1,4 @@
-using ADTOSharp.Runtime.Caching.Redis;
+﻿using ADTOSharp.Runtime.Caching.Redis;
 using ADTOSharp.Runtime.Caching.Redis.RealTime;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

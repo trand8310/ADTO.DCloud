@@ -72,36 +72,38 @@ namespace ADTO.DCloud.Infrastructure
                 return serviceType.GetMethod(methodName, parameterTypes);
             }
         }
-     
+
         /// <summary>
         /// 从方法的返回类型中提取最终的业务 DTO 类型。
         /// 支持解包：Task<T>、ValueTask<T>、PagedResultDto<T> 等常见泛型包装。
         /// </summary>
         private static Type ExtractDtoType(Type returnType)
         {
-            // 如果本身就是 DTO（非泛型，或符合某种命名约定），直接返回
-            if (IsDtoType(returnType))
-                return returnType;
-
-            // 处理泛型类型：例如 PagedResultWithAuthDto<T>，取 T
+            // 1. 处理 Task<T> / ValueTask<T>
             if (returnType.IsGenericType)
             {
                 Type genericDef = returnType.GetGenericTypeDefinition();
-                // 可以判断已知的包装类型，也可以直接取第一个泛型参数
-                if (genericDef == typeof(PagedResultWithAuthDto<>)) // 或其他类似 List<>, PageResult<>
-                {
-                    Type innerType = returnType.GetGenericArguments()[0];
-                    // 递归处理，以防 innerType 又是一个包装（例如 PagedResultWithAuthDto<PageDto<Entity>>）
-                    return ExtractDtoType(innerType);
-                }
-                // 其他泛型类型（如 List<T>, IEnumerable<T>）也可以按需处理
-                if (genericDef == typeof(List<>) || genericDef == typeof(IEnumerable<>))
+                if (genericDef == typeof(Task<>) || genericDef == typeof(ValueTask<>))
                 {
                     return ExtractDtoType(returnType.GetGenericArguments()[0]);
                 }
             }
-            // 都不匹配则返回 null
-            return null;
+            // 2. 处理自定义泛型包装类型：PagedResultWithAuthDto<T>, PagedResult<T>, Response<T> 等
+            // 如果当前类型是泛型类，并且它的命名空间/名称符合包装特征，可以递归取第一个泛型参数
+            if (returnType.IsGenericType && !returnType.IsGenericTypeDefinition)
+            {
+                // 这里可以配置一组已知的包装类型，或直接假设任何单一泛型参数的类型都是包装
+                // 更严谨的做法：检查类型名称包含 "Result", "Response", "Dto" 等，或者通过特性标记
+                var typeArgs = returnType.GetGenericArguments();
+                if (typeArgs.Length == 1)
+                {
+                    // 递归解包，直到非泛型或非单一泛型参数
+                    return ExtractDtoType(typeArgs[0]);
+                }
+            }
+
+            // 3. 如果已经是非泛型类型，或者解包到最后，直接返回
+            return returnType;
         }
         /// <summary>
         /// 辅助方法：判断是否为“真正的” DTO 类型（可根据特性、命名空间等自定义）

@@ -207,7 +207,7 @@ namespace ADTO.DCloud.ApplicationForm.Abs
                         select new AdtoAbsAttendanceDto
                         {
                             Id = r.Id,
-                            UserId=r.UserId,
+                            UserId = r.UserId,
                             AbsType = r.AbsType,
                             Name = user.Name,
                             UserName = user.UserName,
@@ -222,6 +222,7 @@ namespace ADTO.DCloud.ApplicationForm.Abs
         (a.EndDate.Date >= input.StartDate && a.EndDate.Date <= input.EndDate) ||
         (input.StartDate >= a.StartDate.Date && input.StartDate <= a.EndDate.Date) ||
         (input.EndDate >= a.StartDate.Date && input.EndDate <= a.EndDate.Date))
+                .WhereIf(input.UserId.HasValue && input.UserId != Guid.Empty, x => x.UserId.Equals(input.UserId))
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword) || x.UserName.Equals(input.Keyword));
 
             var list = await query.ToListAsync();

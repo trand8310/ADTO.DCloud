@@ -5,9 +5,9 @@ using ADTOSharp;
 using ADTOSharp.AspNetCore.SignalR.Hubs;
 using ADTOSharp.Localization;
 using ADTOSharp.RealTime;
+using ADTOSharp.Runtime.Caching.Redis.RealTime;
 using ADTOSharp.Runtime.Session;
 using ADTOSharp.UI;
-using ADTOSharp.Runtime.Caching.Redis.RealTime;
 using Castle.Core.Logging;
 using Castle.Windsor;
 using Microsoft.AspNetCore.SignalR;
@@ -49,6 +49,7 @@ public class ChatHub : OnlineClientHubBase
         _onlineClientStore = onlineClientStore;
         Logger = NullLogger.Instance;
         ChatAppSession = NullADTOSharpSession.Instance;
+
     }
 
     /// <summary>

@@ -243,6 +243,7 @@ public static class PermissionNames
     #region 考勤状态
     public const string Pages_Attendances = "Pages.Attendances";
     public const string Pages_Attendances_List = "Pages.Attendances.List";
+    public const string Pages_Attendances_List_UpdateAttendanceLogs = "Pages.Attendances.List.UpdateAttendanceLogs";
 
     #endregion
 }

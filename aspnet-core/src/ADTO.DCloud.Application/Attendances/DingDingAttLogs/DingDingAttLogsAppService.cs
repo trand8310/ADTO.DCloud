@@ -39,6 +39,7 @@ namespace ADTO.DCloud.Attendances.DingDingAttLogs
         {
             var query = _repository.GetAll()
                 .Where(x => x.Timestamp >= input.StartDate && x.Timestamp <= input.EndDate)
+                .WhereIf(!string.IsNullOrEmpty(input.UserName), x => x.UserName.Equals(input.UserName))
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Equals(input.Keyword) || x.UserName.Equals(input.Keyword))
                 ;
             var list = await query.ToDynamicListAsync();

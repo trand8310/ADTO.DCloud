@@ -27,5 +27,9 @@ namespace ADTO.DCloud.ApplicationForm.Abs.Dto
         [DisableDateTimeNormalization]
         [JsonConverter(typeof(OnlyDateConverter))]
         public DateTime? EndDate { get; set; }
+        /// <summary>
+        /// 用户Id--在流程申请的时候，自动调用更改考勤的服务
+        /// </summary>
+        public Guid? UserId { get; set; }
     }
 }

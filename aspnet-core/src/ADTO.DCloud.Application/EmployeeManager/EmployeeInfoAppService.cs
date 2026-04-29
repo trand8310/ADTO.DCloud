@@ -317,6 +317,7 @@ namespace ADTO.DCloud.EmployeeManager
                 .WhereIf(input.IsAttType.HasValue, x => x.IsAttType.Equals(input.IsAttType))
                 .WhereIf(input.AttTimeRuleId.HasValue, x => x.AttTimeRuleId.Equals(input.AttTimeRuleId))//考勤时间
                 .WhereIf(input.OfficeLocation.HasValue, x => x.OfficeLocation.Equals(input.OfficeLocation))//办公地点
+                .WhereIf(input.UserId.HasValue && input.UserId != Guid.Empty, x => x.UserId.Equals(input.UserId))
                 ;
             //获取总数
             var resultCount = await query.CountAsync();

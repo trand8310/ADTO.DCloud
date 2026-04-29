@@ -2,6 +2,8 @@
 using ADTO.DCloud.ApplicationForm.Att.Dto;
 using ADTO.DCloud.ApplicationForm.Onb.Dto;
 using ADTO.DCloud.ApplicationForm.Out.Dto;
+using ADTO.DCloud.Attendances.Attendance;
+using ADTO.DCloud.Attendances.Attendance.Dto;
 using ADTO.DCloud.Authorization;
 using ADTO.DCloud.Authorization.Users;
 using ADTO.DCloud.DataAuthorizes;
@@ -30,6 +32,7 @@ using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
 using static ADTO.DCloud.ApplicationForm.Abs.enums.EnumAttStatusType;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ADTO.DCloud.ApplicationForm.Att
 {
@@ -46,14 +49,15 @@ namespace ADTO.DCloud.ApplicationForm.Att
         private readonly IRepository<WorkFlowProcess, Guid> _processRepository;
         private readonly DataFilterService _dataAuthorizesApp;
         private readonly IRepository<DataItemDetail, Guid> _dataitemRepository;
-        private readonly DataItemDetailAppService _dataItemAppService;
+        private readonly DataItemDetailAppService _dataItemAppService; 
+
         public AdtoAttAppService(IRepository<Adto_Att, Guid> repository,
             IApplicationFormCheckDateAppService applicationFormAppService,
               IRepository<OrganizationUnit, Guid> orgRepository,
               IRepository<User, Guid> userRepository,
               DataFilterService dataAuthorizesApp,
               IRepository<WorkFlowProcess, Guid> processRepository,
-              DataItemDetailAppService dataItemAppService)
+              DataItemDetailAppService dataItemAppService )
         {
             _repository = repository;
             _applicationFormAppService = applicationFormAppService;
@@ -62,7 +66,7 @@ namespace ADTO.DCloud.ApplicationForm.Att
             _processRepository = processRepository;
             _dataAuthorizesApp = dataAuthorizesApp;
             //_dataitemRepository = dataitemRepository;
-            _dataItemAppService = dataItemAppService;
+            _dataItemAppService = dataItemAppService; 
         }
 
         #region 获取数据
@@ -211,6 +215,7 @@ namespace ADTO.DCloud.ApplicationForm.Att
                             FlowStatus = pro.IsFinished ?? 0
                         };
             query = query.Where(x => x.AttDate >= input.StartDate && x.AttDate <= input.EndDate)
+                .WhereIf(input.UserId.HasValue && input.UserId != Guid.Empty, x => x.UserId.Equals(input.UserId))
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword) || x.UserName.Equals(input.Keyword));
 
             var list = await query.ToListAsync();
@@ -377,7 +382,13 @@ namespace ADTO.DCloud.ApplicationForm.Att
             DateTime begin = Convert.ToDateTime(AttDate.ToString("yyyy-MM") + "-01");
             //下月月初
             DateTime end = Convert.ToDateTime(AttDate.ToString("yyyy-MM") + "-01").AddMonths(+1);
-            var list = await _repository.GetAll().Where(p => p.UserId == userId).Where(p => p.AttDate >= begin && p.AttDate < end && p.Id != input.Id).ToListAsync();
+            var query = from r in this._repository.GetAll()
+                        join pro in this._processRepository.GetAll() on r.Id equals pro.Id
+                        select new { r, pro };
+            //var list = await _repository.GetAll()
+            //.Where(p => p.UserId == userId).Where(p => p.AttDate >= begin && p.AttDate < end && p.Id != input.Id).ToListAsync();
+            //表单有，流程也必须要有
+            var list = await query.Where(p => p.r.UserId == userId).Where(p => p.r.AttDate >= begin && p.r.AttDate < end && p.r.Id != input.Id).ToListAsync();
             if (list.Count >= 3)
             {
                 throw new ADTOSharpException(L("申请失败：您这个月已申请3次考勤忘打卡！"));
@@ -399,6 +410,7 @@ namespace ADTO.DCloud.ApplicationForm.Att
 
         }
         #endregion
+
     }
 }
 

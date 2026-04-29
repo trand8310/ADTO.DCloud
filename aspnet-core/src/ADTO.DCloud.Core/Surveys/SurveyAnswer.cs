@@ -23,7 +23,7 @@ namespace ADTO.DCloud.Surveys
         public Guid UserId { get; set; }
 
         /// <summary>
-        /// 答卷状态(1=收到答卷,2=已交卷,3=已收到回执)
+        /// 答卷状态(0=未答卷,2=已交卷,3=已阅卷)
         /// </summary>
         public int AnswerStatus { get; set; }
 

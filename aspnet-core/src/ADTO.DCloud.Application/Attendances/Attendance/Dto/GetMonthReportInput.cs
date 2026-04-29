@@ -1,4 +1,6 @@
-﻿using ADTO.DCloud.Infrastructure;
+﻿using ADTO.DCloud.Dto;
+using ADTO.DCloud.Infrastructure;
+using ADTOSharp.Runtime.Validation;
 using ADTOSharp.Timing;
 using System;
 using System.Collections.Generic;
@@ -9,7 +11,10 @@ using System.Threading.Tasks;
 
 namespace ADTO.DCloud.Attendances.Attendance.Dto
 {
-    public class UpdateAttendanceLogsRequestDto
+    /// <summary>
+    /// 考勤月报表
+    /// </summary>
+    public class GetMonthReportInput : PagedAndSortedInputDto, IShouldNormalize
     {
         /// <summary>
         /// 关键词
@@ -21,14 +26,14 @@ namespace ADTO.DCloud.Attendances.Attendance.Dto
         /// </summary>
         [DisableDateTimeNormalization]
         [JsonConverter(typeof(OnlyDateConverter))]
-        public DateTime StartDate { get; set; } = DateTime.Now;
+        public DateTime StartDate { get; set; }
 
         /// <summary>
         /// 结束日期
         /// </summary>
         [DisableDateTimeNormalization]
         [JsonConverter(typeof(OnlyDateConverter))]
-        public DateTime EndDate { get; set; } = DateTime.Now;
+        public DateTime EndDate { get; set; }
 
         /// <summary>
         /// 所属公司
@@ -38,23 +43,15 @@ namespace ADTO.DCloud.Attendances.Attendance.Dto
         /// <summary>
         /// 所属部门
         /// </summary>
-        public Guid? DepartmentId { get; set; }
-        /// <summary>
-        /// 用户基础信息设置的考勤区域
-        /// </summary>
-        public Guid? AreaId { get; set; }
+        public long? DepartmentId { get; set; }
 
-        /// <summary>
-        /// 考勤状态
-        /// </summary>
-        public string[] Status { get; set; }
-        /// <summary>
-        /// 考勤状态Id
-        /// </summary>
-        public List<Guid> IdList { get; set; }
-        /// <summary>
-        /// 用户Id
-        /// </summary>
-        public Guid UserId { get; set; }
+        public void Normalize()
+        {
+            if (string.IsNullOrEmpty(Sorting))
+            {
+                Sorting = " ";
+            }
+            Keyword = Keyword?.Trim();
+        }
     }
 }

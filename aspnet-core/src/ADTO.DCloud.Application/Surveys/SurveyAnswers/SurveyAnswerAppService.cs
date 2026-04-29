@@ -1,5 +1,6 @@
 ﻿using ADTO.DCloud.Authorization.Users;
 using ADTO.DCloud.Authorization.Users.Dto;
+using ADTO.DCloud.DataItem;
 using ADTO.DCloud.Infrastructure;
 using ADTO.DCloud.Surveys.SurveyAnswers.Dto;
 using ADTOSharp.Application.Services.Dto;
@@ -30,7 +31,8 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
         private readonly IRepository<OrganizationUnit, Guid> _orgRepository;
         private readonly IRepository<SurveyAnswerDetail, Guid> _answerDetailRepository;
         private readonly IRepository<SurveyQuestion, Guid> _questionRepository;
-        IRepository<SurveyAnswer, Guid> _repository;
+        IRepository<SurveyAnswer, Guid> _answerRepository;
+        private IRepository<DataItemDetail, Guid> _dataItemDetailRepository;
         #endregion
 
         #region ctor
@@ -39,16 +41,19 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
         /// </summary>
         /// <param name="repository"></param>
         public SurveyAnswerAppService(
-            IRepository<SurveyAnswer, Guid> repository,
+            IRepository<SurveyAnswer, Guid> answerRepository,
             IRepository<User, Guid> userRepository,
             IRepository<OrganizationUnit, Guid> orgRepository,
             IRepository<SurveyAnswerDetail, Guid> answerDetailRepository,
-            IRepository<SurveyQuestion, Guid> questionRepository)
+            IRepository<SurveyQuestion, Guid> questionRepository
+            , IRepository<DataItemDetail, Guid> dataItemDetailRepository)
         {
+            _answerRepository = answerRepository;
             _userRepository = userRepository;
             _answerDetailRepository = answerDetailRepository;
             _orgRepository = orgRepository;
             _questionRepository = questionRepository;
+            _dataItemDetailRepository = dataItemDetailRepository;
         }
         #endregion
 
@@ -59,7 +64,7 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
         /// <returns></returns>
         public async Task<List<UserDto>> GetSurveyAnswerList(SurveyAnswerRequestDto input)
         {
-            var query = from participant in this._repository.GetAll()
+            var query = from participant in this._answerRepository.GetAll()
                         join u in _userRepository.GetAll() on participant.UserId equals u.Id into a
                         from user in a.DefaultIfEmpty()
                         join d in _orgRepository.GetAll() on user.DepartmentId equals d.Id into deptment
@@ -68,9 +73,9 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
                         select new UserDto
                         {
                             Id = user.Id,
-                            Name = user.Name,
-                            UserName = user.UserName,
-                            DepartmentName = department != null ? department.DisplayName : "",
+                            Name = user.Name ?? "",
+                            UserName = user.UserName ?? "",
+                            DepartmentName = department.DisplayName ?? "",
                             DepartmentId = user.DepartmentId,
                             CompanyId = user.CompanyId
                         };
@@ -78,27 +83,28 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
         }
 
         /// <summary>
-        /// 分页查询答卷信息
+        /// 分页查询答卷信息/内部考核统计分页列表 GetAllAsync
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         //[DataPermission("考卷统计")]
-        public async Task<PagedResultDto<SurveyAnswerDto>> GetAllAsync(PagedSurveyAnswerRequestDto input)
+        public async Task<PagedResultDto<SurveyAnswerDto>> GetSurveyAnswerPagedListAsync(PagedSurveyAnswerRequestDto input)
         {
-            var query = from participant in this._repository.GetAll()
+            var query = from participant in this._answerRepository.GetAll()
                         join u in _userRepository.GetAll() on participant.UserId equals u.Id into a
                         from user in a.DefaultIfEmpty()
                         join d in _orgRepository.GetAll() on user.DepartmentId equals d.Id into d1
                         from department in d1.DefaultIfEmpty()
-                            //where participant.SurveyId.Equals(input.SurveyId)
-                        select new { participant, user, department };
+
+                        join t9 in _dataItemDetailRepository.GetAllIncluding(p => p.Item).Where(p => p.Item.ItemCode == "AnswerStatus") on participant.AnswerStatus.ToString() equals t9.ItemValue into itemdetails
+                        from itemdetail in itemdetails.DefaultIfEmpty()
+
+                        select new { participant, user, department, itemdetail };
             query = query.WhereIf(input.SurveyId.HasValue, q => q.participant.SurveyId.Equals(input.SurveyId))
                 .WhereIf(input.DepartmentId.HasValue && input.DepartmentId != Guid.Empty, q => q.department.Id == input.DepartmentId)
                 .WhereIf(input.CompanyId.HasValue && input.CompanyId != Guid.Empty, q => q.user.CompanyId.Equals(input.CompanyId))
                 .WhereIf(!string.IsNullOrEmpty(input.keyword), q => q.user.UserName.Equals(input.keyword) || q.user.Name.Contains(input.keyword));
-            //var filteredQuery = await _permissionAppServiceService.CreateDataFilteredQueryWithFields(query, this.GetRequestPath().Replace("ExportExcel", ""));
-            //query = filteredQuery.Query;
 
             //获取总数
             var resultCount = await query.CountAsync();
@@ -109,6 +115,7 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
                 dto.Name = item.user != null ? item.user.Name : "";
                 dto.UserName = item.user != null ? item.user.UserName : "";
                 dto.Department = item.department != null ? item.department.DisplayName : "";
+                dto.AnswerStatusText = item.itemdetail.ItemName;
                 return dto;
             }).ToList();
 
@@ -164,8 +171,8 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
         /// <returns></returns>
         public async Task DeleteAnswer(EntityDto<Guid> input)
         {
-            var entity = this._repository.Get(input.Id);
-            await this._repository.DeleteAsync(entity);
+            var entity = this._answerRepository.Get(input.Id);
+            await this._answerRepository.DeleteAsync(entity);
         }
         /// <summary>
         /// 根据用户和考卷Id删除参与人员
@@ -186,14 +193,14 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
                 throw new UserFriendlyException($"不存在");
             }
 
-            var entity = await this._repository.GetAll().Where(q => q.SurveyId.Equals(input.SurveyId) && q.UserId.Equals(input.UserId)).FirstOrDefaultAsync();
+            var entity = await this._answerRepository.GetAll().Where(q => q.SurveyId.Equals(input.SurveyId) && q.UserId.Equals(input.UserId)).FirstOrDefaultAsync();
 
             if (entity == null || entity.Id == Guid.Empty)
             {
                 throw new UserFriendlyException($"不存在");
             }
 
-            await this._repository.DeleteAsync(entity);
+            await this._answerRepository.DeleteAsync(entity);
         }
         /// <summary>
         /// 保存试卷
@@ -206,7 +213,7 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
         {
             try
             {
-                var entity = this._repository.Get(input.Id);
+                var entity = this._answerRepository.Get(input.Id);
                 if (entity == null || entity.Id == Guid.Empty)
                 {
                     throw new UserFriendlyException($"提交失败，试卷不存在");
@@ -221,7 +228,7 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
                 entity.Status = 1;
                 entity.Score = input.Score;
 
-                await this._repository.UpdateAsync(entity);
+                await this._answerRepository.UpdateAsync(entity);
                 entityDetail.AnswerContent = input.AnswerContent;
                 entityDetail.AnswerValue = input.AnswerValue;
                 await _answerDetailRepository.UpdateAsync(entityDetail);
@@ -254,7 +261,7 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
                     throw new UserFriendlyException($"提交失败，考卷题库为空，请刷新重试!");
                 }
 
-                var entity = this._repository.GetAll().Where(q => q.UserId == user.Id && q.SurveyId == input.SurveyId).FirstOrDefault() ?? new SurveyAnswer();
+                var entity = this._answerRepository.GetAll().Where(q => q.UserId == user.Id && q.SurveyId == input.SurveyId).FirstOrDefault() ?? new SurveyAnswer();
                 if (entity.AnswerStatus != 1 && entity.AnswerStatus != 0)
                 {
                     throw new UserFriendlyException($"提交失败，试卷已提交，不能重复提交");
@@ -298,9 +305,9 @@ namespace ADTO.DCloud.Surveys.SurveyAnswers
                 entity.Score = surveyQuestions.Sum(q => q.AnswerScore);
 
                 if (entity == null || entity.Id == Guid.Empty)
-                    entity.Id = await this._repository.InsertAndGetIdAsync(entity);
+                    entity.Id = await this._answerRepository.InsertAndGetIdAsync(entity);
                 else
-                    await this._repository.UpdateAsync(entity);
+                    await this._answerRepository.UpdateAsync(entity);
 
                 await _answerDetailRepository.InsertAsync(new SurveyAnswerDetail() { AnswerID = entity.Id, AnswerContent = surveyQuestions.ToJson(), AnswerValue = input.AnswerValue });
             }

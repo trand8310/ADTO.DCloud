@@ -29,5 +29,9 @@ namespace ADTO.DCloud.Attendances.DingDingAttLogs.Dto
         [DisableDateTimeNormalization]
         [JsonConverter(typeof(OnlyDateConverter))]
         public DateTime EndDate { get; set; } = DateTime.Today.AddDays(1).AddTicks(-1);
+        /// <summary>
+        /// 用户工号
+        /// </summary>
+        public string UserName { get; set; }
     }
 }

@@ -127,6 +127,62 @@ public class CommonLookupAppService : DCloudAppServiceBase, ICommonLookupAppServ
         }
 
     }
+
+    /// <summary>
+    /// 查询员工信息(多部门查询)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public async Task<PagedResultDto<FindUsersOutputDto>> FindEmployeesByDepartmentIds(FindUsersInput input)
+    {
+        if (ADTOSharpSession.TenantId != null)
+        {
+            input.TenantId = ADTOSharpSession.TenantId;
+        }
+        using (CurrentUnitOfWork.SetTenantId(input.TenantId))
+        {
+            var query = _employeeRepository.GetAllIncluding(d => d.Department, c => c.Company, u => u.User).WhereIf(
+                     !input.Keyword.IsNullOrWhiteSpace(),
+                     u =>
+                         u.Name.Contains(input.Keyword) ||
+                         u.UserName.Contains(input.Keyword) ||
+                         u.Email.Contains(input.Keyword)
+                 )
+                .WhereIf(input.DepartmentIds.Count > 0, u => input.DepartmentIds.Contains(u.Department.Id))
+                .WhereIf(input.ExcludeCurrentUser, u => u.Id != ADTOSharpSession.GetUserId());
+
+
+            var userCount = await query.CountAsync();
+
+            var users = await query
+                .OrderByDescending(u => u.CreationTime)
+                .PageBy(input)
+                .ToListAsync();
+            var userDtos = users.Select(item =>
+            {
+                var dto = ObjectMapper.Map<FindUsersOutputDto>(item.User);
+                return dto;
+            }).ToList();
+            foreach (var item in userDtos)
+            {
+                var imageUser = await _profileAppService.GetProfilePictureByUser(item.Id);
+                //默认图像
+                if (string.IsNullOrWhiteSpace(imageUser.ProfilePicture))
+                {
+                    byte[] defaultImageBytes = File.ReadAllBytes(Path.Combine(_webHostEnvironment.WebRootPath, "Common", "Images", "default-profile-picture.png"));
+                    item.UserProfilePicture = Convert.ToBase64String(defaultImageBytes); // string
+                }
+                else
+                {
+                    item.UserProfilePicture = imageUser.ProfilePicture;
+                }
+            }
+            return new PagedResultDto<FindUsersOutputDto>(userCount, userDtos);
+        }
+
+    }
+
+
     /// <summary>
     /// 查找用户
     /// </summary>

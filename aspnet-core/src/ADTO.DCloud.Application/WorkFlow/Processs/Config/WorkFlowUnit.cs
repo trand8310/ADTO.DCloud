@@ -261,6 +261,6 @@ namespace ADTO.DCloud.WorkFlow.Processs.Dto
         /// <summary>
         /// 节点-执行服务方法参数
         /// </summary>
-        public string ServiceInvokeParameters { get; set; }
+        public List<WorkFlowCustmerTitleRule> ServerCallbackFunParameters { get; set; }
     }
 }

@@ -89,7 +89,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_Abs");
+                    b.ToTable("Adto_Abs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_Att", b =>
@@ -148,7 +148,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_Att");
+                    b.ToTable("Adto_Att", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_EmailRequireForm", b =>
@@ -205,7 +205,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_EmailRequireForm");
+                    b.ToTable("Adto_EmailRequireForm", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_FreeInformalPetition", b =>
@@ -257,7 +257,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_FreeInformalPetition");
+                    b.ToTable("Adto_FreeInformalPetition", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_InformalPetition", b =>
@@ -326,7 +326,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_InformalPetition");
+                    b.ToTable("Adto_InformalPetition", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_OaPolicyApproval", b =>
@@ -417,7 +417,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_OaPolicyApproval");
+                    b.ToTable("Adto_OaPolicyApproval", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_OfficeSupplyApplication", b =>
@@ -465,7 +465,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_OfficeSupplyApplications");
+                    b.ToTable("Adto_OfficeSupplyApplications", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_OfficeSupplyApplicationItem", b =>
@@ -530,7 +530,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("OfficeSupplyApplicationId");
 
-                    b.ToTable("Adto_OfficeSupplyApplicationItems");
+                    b.ToTable("Adto_OfficeSupplyApplicationItems", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_Onb", b =>
@@ -588,7 +588,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_Onb");
+                    b.ToTable("Adto_Onb", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_Out", b =>
@@ -643,7 +643,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_Out");
+                    b.ToTable("Adto_Out", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_StockApplication", b =>
@@ -696,7 +696,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_StockApplications");
+                    b.ToTable("Adto_StockApplications", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_StockApplicationItem", b =>
@@ -773,7 +773,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("StockApplicationId");
 
-                    b.ToTable("Adto_StockApplicationItems");
+                    b.ToTable("Adto_StockApplicationItems", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_TrainingRequireForm", b =>
@@ -828,7 +828,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_TrainingRequireForm");
+                    b.ToTable("Adto_TrainingRequireForm", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_TrainingRoomRequireForm", b =>
@@ -897,7 +897,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_TrainingRoomRequireForm");
+                    b.ToTable("Adto_TrainingRoomRequireForm", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_UseCar", b =>
@@ -1003,7 +1003,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_UseCar");
+                    b.ToTable("Adto_UseCar", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.Adto_WorkOverTime", b =>
@@ -1062,7 +1062,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Adto_WorkOverTime");
+                    b.ToTable("Adto_WorkOverTime", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.ApplicationFormCheckDate", b =>
@@ -1089,7 +1089,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationFormCheckDates");
+                    b.ToTable("ApplicationFormCheckDates", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ApplicationForm.DisableUserWrokFlow", b =>
@@ -1114,7 +1114,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DisableUserWrokFlows");
+                    b.ToTable("DisableUserWrokFlows", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.AreaBase.Base_Area", b =>
@@ -1170,7 +1170,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Base_Area");
+                    b.ToTable("Base_Area", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.AreaBase.Base_City", b =>
@@ -1232,7 +1232,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Base_City");
+                    b.ToTable("Base_City", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.AreaBase.Base_Country", b =>
@@ -1288,7 +1288,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Base_Country");
+                    b.ToTable("Base_Country", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.AreaBase.Base_County", b =>
@@ -1353,7 +1353,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Base_County");
+                    b.ToTable("Base_County", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.AreaBase.Base_Province", b =>
@@ -1412,7 +1412,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Base_Province");
+                    b.ToTable("Base_Province", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.AttendanceLocation", b =>
@@ -1479,7 +1479,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AttendanceLocations");
+                    b.ToTable("AttendanceLocations", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.AttendanceLog", b =>
@@ -1563,7 +1563,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AttendanceLogs");
+                    b.ToTable("AttendanceLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.AttendanceMachines", b =>
@@ -1594,7 +1594,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("AttendanceMachines");
+                    b.ToTable("AttendanceMachines", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.AttendanceTime", b =>
@@ -1655,7 +1655,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AttendanceTimes");
+                    b.ToTable("AttendanceTimes", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.AttendanceTimeRule", b =>
@@ -1707,7 +1707,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("AttendanceTimeRules");
+                    b.ToTable("AttendanceTimeRules", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.AttendancerMealStatistic", b =>
@@ -1757,7 +1757,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AttendancerMealStatistics");
+                    b.ToTable("AttendancerMealStatistics", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.CHECKINOUT", b =>
@@ -1803,7 +1803,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("temp_CHECKINOUT");
+                    b.ToTable("temp_CHECKINOUT", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.DingdingUserAttLog", b =>
@@ -1865,7 +1865,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DingdingUserAttLogs");
+                    b.ToTable("DingdingUserAttLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.PublicHoliDay", b =>
@@ -1897,7 +1897,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PublicHoliDay");
+                    b.ToTable("PublicHoliDay", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Attendances.USERINFO", b =>
@@ -1917,7 +1917,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("temp_USERINFO");
+                    b.ToTable("temp_USERINFO", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Authorization.Delegation.UserDelegation", b =>
@@ -1968,7 +1968,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("TenantId", "TargetUserId");
 
-                    b.ToTable("UserDelegations");
+                    b.ToTable("UserDelegations", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Authorization.Posts.Post", b =>
@@ -2026,7 +2026,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Authorization.Posts.UserPost", b =>
@@ -2055,7 +2055,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserPosts");
+                    b.ToTable("UserPosts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Authorization.Roles.Role", b =>
@@ -2166,7 +2166,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserRelations");
+                    b.ToTable("UserRelations", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Authorization.Users.RecentPassword", b =>
@@ -2193,7 +2193,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RecentPasswords");
+                    b.ToTable("RecentPasswords", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Authorization.Users.User", b =>
@@ -2396,7 +2396,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("TenantId", "UserId", "ReadState");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CodeRule.CodeRule", b =>
@@ -2470,7 +2470,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CodeRules");
+                    b.ToTable("CodeRules", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CodeRule.CodeRuleRecord", b =>
@@ -2501,7 +2501,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("RuleId");
 
-                    b.ToTable("CodeRuleRecords");
+                    b.ToTable("CodeRuleRecords", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CodeTable.CodeColumns", b =>
@@ -2571,7 +2571,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CodeTableId");
 
-                    b.ToTable("CodeColumns");
+                    b.ToTable("CodeColumns", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CodeTable.CodeTable", b =>
@@ -2624,7 +2624,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CodeTables");
+                    b.ToTable("CodeTables", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CommodityStocks.CommodityStock", b =>
@@ -2694,7 +2694,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("CommodityStocks");
+                    b.ToTable("CommodityStocks", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CommodityStocks.CommodityStockCategory", b =>
@@ -2744,7 +2744,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CommodityStockCategory");
+                    b.ToTable("CommodityStockCategory", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.CommodityStocks.CommodityStocksRecord", b =>
@@ -2797,7 +2797,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CommodityStockId");
 
-                    b.ToTable("CommodityStocksRecords");
+                    b.ToTable("CommodityStocksRecords", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Customers.Customer", b =>
@@ -2919,7 +2919,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Customers.CustomerContacts", b =>
@@ -2986,7 +2986,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("CustomerContacts");
+                    b.ToTable("CustomerContacts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Customers.CustomerFollowRecord", b =>
@@ -3044,7 +3044,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("CustomerFollowRecords");
+                    b.ToTable("CustomerFollowRecords", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Customers.CustomerLogs", b =>
@@ -3075,7 +3075,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("CustomerLogs");
+                    b.ToTable("CustomerLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Customers.CustomerProduct", b =>
@@ -3127,7 +3127,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("CustomerProducts");
+                    b.ToTable("CustomerProducts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Customers.CustomerShareRecord", b =>
@@ -3173,7 +3173,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("CustomerShareRecords");
+                    b.ToTable("CustomerShareRecords", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataArea.DataArea", b =>
@@ -3231,7 +3231,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataAreas");
+                    b.ToTable("DataAreas", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataAuthorizes.DataAuthorize", b =>
@@ -3301,7 +3301,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataAuthorizes");
+                    b.ToTable("DataAuthorizes", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataIcons.DataIcons", b =>
@@ -3351,7 +3351,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataIcons");
+                    b.ToTable("DataIcons", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataIcons.DataIconver", b =>
@@ -3368,7 +3368,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataIconver");
+                    b.ToTable("DataIconver", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataItem.DataItem", b =>
@@ -3423,7 +3423,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("DataItems");
+                    b.ToTable("DataItems", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataItem.DataItemDetail", b =>
@@ -3483,7 +3483,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("DataItemDetails");
+                    b.ToTable("DataItemDetails", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DataSource.DataSource", b =>
@@ -3539,7 +3539,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataSources");
+                    b.ToTable("DataSources", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DatabaseManager.DataConnections", b =>
@@ -3589,7 +3589,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataConnections");
+                    b.ToTable("DataConnections", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DatabaseManager.ImportTableSource", b =>
@@ -3630,7 +3630,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ImportTableSources");
+                    b.ToTable("ImportTableSources", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.DeptRoles.DeptRole", b =>
@@ -3683,7 +3683,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DeptRoles");
+                    b.ToTable("DeptRoles", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.EmployeeManager.CompanyPhone", b =>
@@ -3735,7 +3735,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("CompanyPhones");
+                    b.ToTable("CompanyPhones", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.EmployeeManager.EmployeeChangeLog", b =>
@@ -3767,7 +3767,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EmployeeChangeLogs");
+                    b.ToTable("EmployeeChangeLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.EmployeeManager.EmployeeContracts", b =>
@@ -3854,7 +3854,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EmployeeContracts");
+                    b.ToTable("EmployeeContracts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.EmployeeManager.EmployeeFamilies", b =>
@@ -3936,7 +3936,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EmployeeFamilies");
+                    b.ToTable("EmployeeFamilies", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.EmployeeManager.EmployeeInfo", b =>
@@ -4089,7 +4089,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmployeeInfos");
+                    b.ToTable("EmployeeInfos", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ExcelManager.ExcelExport", b =>
@@ -4142,7 +4142,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelExports");
+                    b.ToTable("ExcelExports", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ExcelManager.ExcelExportField", b =>
@@ -4182,7 +4182,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ExportId");
 
-                    b.ToTable("ExcelExportField");
+                    b.ToTable("ExcelExportField", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ExcelManager.ExcelExportParam", b =>
@@ -4228,7 +4228,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ExportId");
 
-                    b.ToTable("ExcelExportParams");
+                    b.ToTable("ExcelExportParams", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ExcelManager.ExcelImport", b =>
@@ -4281,7 +4281,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelImport");
+                    b.ToTable("ExcelImport", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.ExcelManager.ExcelImportField", b =>
@@ -4327,7 +4327,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ImportId");
 
-                    b.ToTable("ExcelImportFields");
+                    b.ToTable("ExcelImportFields", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.FormScheme.FormScheme", b =>
@@ -4371,7 +4371,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FormSchemes");
+                    b.ToTable("FormSchemes", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.FormScheme.FormSchemeInfo", b =>
@@ -4428,7 +4428,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FormSchemeInfos");
+                    b.ToTable("FormSchemeInfos", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Friendships.Friendship", b =>
@@ -4476,7 +4476,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("Friendships");
+                    b.ToTable("Friendships", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Media.UploadFile", b =>
@@ -4523,7 +4523,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UploadFiles");
+                    b.ToTable("UploadFiles", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Media.UploadFileType", b =>
@@ -4577,7 +4577,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UploadFileTypes");
+                    b.ToTable("UploadFileTypes", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Messages.Message", b =>
@@ -4624,7 +4624,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Modules.Module", b =>
@@ -4726,7 +4726,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Modules");
+                    b.ToTable("Modules", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Modules.ModuleItem", b =>
@@ -4772,7 +4772,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ModuleId");
 
-                    b.ToTable("ModuleItems");
+                    b.ToTable("ModuleItems", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.MultiTenancy.Payments.SubscriptionPayment", b =>
@@ -4847,7 +4847,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("EditionId");
 
-                    b.ToTable("SubscriptionPayments");
+                    b.ToTable("SubscriptionPayments", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.MultiTenancy.Payments.SubscriptionPaymentExtensionData", b =>
@@ -4869,7 +4869,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPaymentsExtensionData");
+                    b.ToTable("SubscriptionPaymentsExtensionData", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.MultiTenancy.Tenant", b =>
@@ -5058,7 +5058,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("News");
+                    b.ToTable("News", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.News.NewsViewLog", b =>
@@ -5081,7 +5081,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("NewsViewLogs");
+                    b.ToTable("NewsViewLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.OA4PTest.OA4PQuestion", b =>
@@ -5148,7 +5148,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("OA4PQuestion");
+                    b.ToTable("OA4PQuestion", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.OA4PTest.OA4PStatistic", b =>
@@ -5210,7 +5210,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("OA4PStatistics");
+                    b.ToTable("OA4PStatistics", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Project.ProjectContacts", b =>
@@ -5277,7 +5277,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectContacts");
+                    b.ToTable("ProjectContacts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Project.ProjectContract", b =>
@@ -5386,7 +5386,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectContracts");
+                    b.ToTable("ProjectContracts", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Project.ProjectFollowRecord", b =>
@@ -5447,7 +5447,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectFollowRecords");
+                    b.ToTable("ProjectFollowRecords", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Project.ProjectInfo", b =>
@@ -5515,7 +5515,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProjectInfos");
+                    b.ToTable("ProjectInfos", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Project.ProjectLog", b =>
@@ -5546,7 +5546,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectLogs");
+                    b.ToTable("ProjectLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Storage.BinaryObject", b =>
@@ -5570,7 +5570,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("BinaryObjects");
+                    b.ToTable("BinaryObjects", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Storage.SharedFileAuthorizes", b =>
@@ -5599,7 +5599,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SharedFileAuthorizes");
+                    b.ToTable("SharedFileAuthorizes", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Storage.SharedFileCategory", b =>
@@ -5645,7 +5645,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("SharedFileCategorys");
+                    b.ToTable("SharedFileCategorys", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Storage.SharedFileInfo", b =>
@@ -5703,7 +5703,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("SharedFileInfos");
+                    b.ToTable("SharedFileInfos", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Surveys.Survey", b =>
@@ -5770,7 +5770,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Survey");
+                    b.ToTable("Survey", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Surveys.SurveyAnswer", b =>
@@ -5833,7 +5833,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SurveyAnswer");
+                    b.ToTable("SurveyAnswer", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Surveys.SurveyAnswerDetail", b =>
@@ -5856,7 +5856,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SurveyAnswerDetails");
+                    b.ToTable("SurveyAnswerDetails", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Surveys.SurveyParticipant", b =>
@@ -5876,7 +5876,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SurveyParticipants");
+                    b.ToTable("SurveyParticipants", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Surveys.SurveyQuestion", b =>
@@ -5942,7 +5942,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SurveyQuestion");
+                    b.ToTable("SurveyQuestion", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Surveys.SurveyQuestionCategory", b =>
@@ -5990,7 +5990,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SurveyQuestionCategory");
+                    b.ToTable("SurveyQuestionCategory", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Tasks.TaskExecutionHistory", b =>
@@ -6023,7 +6023,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("TaskSchedulerId");
 
-                    b.ToTable("TaskExecutionHistorys");
+                    b.ToTable("TaskExecutionHistorys", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Tasks.TaskScheduler", b =>
@@ -6085,7 +6085,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TaskSchedulers");
+                    b.ToTable("TaskSchedulers", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Training.EmployeesTrainingArchives", b =>
@@ -6149,7 +6149,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmployeesTrainingArchives");
+                    b.ToTable("EmployeesTrainingArchives", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Training.TrainingDoc", b =>
@@ -6192,7 +6192,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("TrainingDocs");
+                    b.ToTable("TrainingDocs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.Training.TrainingDocCategory", b =>
@@ -6230,7 +6230,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TrainingDocCategorys");
+                    b.ToTable("TrainingDocCategorys", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Delegate.WorkFlowDelegateRelation", b =>
@@ -6250,7 +6250,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowDelegateRelations");
+                    b.ToTable("WorkFlowDelegateRelations", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Delegate.WorkFlowDelegaterule", b =>
@@ -6292,7 +6292,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowDelegaterules");
+                    b.ToTable("WorkFlowDelegaterules", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Processes.WorkFlowProcess", b =>
@@ -6437,7 +6437,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowProcesses");
+                    b.ToTable("WorkFlowProcesses", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Schemes.WorkFlowScheme", b =>
@@ -6469,7 +6469,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("WorkFlowSchemes");
+                    b.ToTable("WorkFlowSchemes", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Schemes.WorkFlowSchemeauth", b =>
@@ -6505,7 +6505,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowSchemeauths");
+                    b.ToTable("WorkFlowSchemeauths", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Schemes.WorkFlowSchemeinfo", b =>
@@ -6600,7 +6600,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("WorkFlowSchemeinfos");
+                    b.ToTable("WorkFlowSchemeinfos", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.StampManage.WorkFlowStamp", b =>
@@ -6665,7 +6665,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowStamps");
+                    b.ToTable("WorkFlowStamps", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Tasks.WorkFlowTask", b =>
@@ -6839,7 +6839,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowTasks");
+                    b.ToTable("WorkFlowTasks", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Tasks.WorkFlowTaskLog", b =>
@@ -6934,7 +6934,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowTaskLogs");
+                    b.ToTable("WorkFlowTaskLogs", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.DCloud.WorkFlow.Tasks.WorkFlowTaskMsg", b =>
@@ -6990,7 +6990,7 @@ namespace ADTO.DCloud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkFlowTaskMsg");
+                    b.ToTable("WorkFlowTaskMsg", (string)null);
                 });
 
             modelBuilder.Entity("ADTO.OpenIddict.Applications.OpenIddictApplication", b =>
@@ -8629,7 +8629,7 @@ namespace ADTO.DCloud.Migrations
                     b.Property<decimal?>("WeeklyPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.ToTable("Editions");
+                    b.ToTable("Editions", (string)null);
 
                     b.HasDiscriminator().HasValue("SubscribableEdition");
                 });

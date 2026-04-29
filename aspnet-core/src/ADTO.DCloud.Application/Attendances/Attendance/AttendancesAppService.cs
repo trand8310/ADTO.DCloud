@@ -7,6 +7,7 @@ using ADTO.DCloud.ApplicationForm.Onb;
 using ADTO.DCloud.ApplicationForm.Onb.Dto;
 using ADTO.DCloud.ApplicationForm.Out;
 using ADTO.DCloud.ApplicationForm.Out.Dto;
+using ADTO.DCloud.Attendances;
 using ADTO.DCloud.Attendances.Attendance.Dto;
 using ADTO.DCloud.Attendances.AttendanceLocations;
 using ADTO.DCloud.Attendances.AttendanceTimeRules;
@@ -14,7 +15,6 @@ using ADTO.DCloud.Attendances.AttendanceTimes;
 using ADTO.DCloud.Attendances.AttendanceTimes.Dto;
 using ADTO.DCloud.Attendances.DingDingAttLogs;
 using ADTO.DCloud.Attendances.DingDingAttLogs.Dto;
-using ADTO.DCloud.Attendances;
 using ADTO.DCloud.Authorization;
 using ADTO.DCloud.Authorization.Users;
 using ADTO.DCloud.DataAuthorizes;
@@ -25,6 +25,7 @@ using ADTO.DCloud.EmployeeManager;
 using ADTO.DCloud.EmployeeManager.Dto;
 using ADTO.DCloud.Infrastructur;
 using ADTO.DCloud.Infrastructure;
+using ADTOSharp;
 using ADTOSharp.Application.Services.Dto;
 using ADTOSharp.Authorization;
 using ADTOSharp.Authorization.Users;
@@ -47,6 +48,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Twilio.TwiML.Messaging;
 using static ADTO.DCloud.ApplicationForm.Abs.enums.EnumAttStatusType;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ADTO.DCloud.Attendances.Attendance
 {
@@ -66,7 +68,10 @@ namespace ADTO.DCloud.Attendances.Attendance
         private readonly IRepository<PublicHoliDay, Guid> _holidayRepository;
         private readonly IRepository<CHECKINOUT, int> _chekinoutRepository;
         private readonly IRepository<USERINFO, int> _userinfoRepository;
+        private readonly IRepository<EmployeeInfo, Guid> _employeeRepository;
         private readonly IRepository<AttendanceMachines, Guid> _machinesRepository;
+        private readonly IRepository<DingdingUserAttLog, Guid> _dingddingRepository;
+        private readonly IRepository<AttendancerMealStatistic, Guid> _mealgRepository;
         private readonly DataFilterService _dataAuthorizesApp;
         private readonly EmployeeInfoAppService _employeeInfoAppService;
         private readonly DataItemDetailAppService _itemDetailAppService;
@@ -100,7 +105,10 @@ namespace ADTO.DCloud.Attendances.Attendance
              AdtoAttAppService attAppService,
              AdtoOnbAppService onbAppService,
              AdtoOutAppService outAppService,
-             AttendanceLocationsAppService locationAppService)
+             AttendanceLocationsAppService locationAppService,
+              IRepository<DingdingUserAttLog, Guid> dingddingRepository,
+              IRepository<EmployeeInfo, Guid> employeeRepository,
+              IRepository<AttendancerMealStatistic, Guid> mealgRepository)
         {
             _repository = repository;
             _timeRepository = timerepository;
@@ -124,6 +132,9 @@ namespace ADTO.DCloud.Attendances.Attendance
             _outAppService = outAppService;
             _machinesRepository = machinesRepository;
             _locationAppService = locationAppService;
+            _dingddingRepository = dingddingRepository;
+            _employeeRepository = employeeRepository;
+            _mealgRepository = mealgRepository;
         }
         #endregion
 
@@ -134,7 +145,7 @@ namespace ADTO.DCloud.Attendances.Attendance
         /// <param name="input"></param>
         /// <returns></returns>
         [DataAuthPermission("GetAttendancePagedList")]
-        public async Task<PagedResultWithAuthDto<AttendanceLogJoinDto>> GetAttendancePagedList(GetAttendancePagedInput input)
+        public async Task<PagedResultDto<AttendanceLogJoinDto>> GetAttendancePagedList(GetAttendancePagedInput input)
         {
             input.StartDate = input.StartDate.ToString("yyyy-MM-dd").ToDate();
             input.EndDate = input.EndDate.ToString("yyyy-MM-dd").ToDate().AddSeconds(86399);
@@ -180,9 +191,9 @@ namespace ADTO.DCloud.Attendances.Attendance
             .WhereIf(input.DepartmentId.HasValue && input.DepartmentId != Guid.Empty, x => x.DepartmentId.Equals(input.DepartmentId))
             .WhereIf(input.CompanyId.HasValue, x => x.CompanyId.Equals(input.CompanyId));
 
-            if (!string.IsNullOrEmpty(input.Status))
+            if (input.Status != null && input.Status.Count() > 0)
             {
-                var stutus = input.Status.TrimEnd(',').Split(',');
+                var stutus = input.Status;// input.Status.TrimEnd(',').Split(',');
                 if (stutus.Contains("审核中"))
                 {
                     string[] shz = new string[] { "外出审核中", "出差审核中", "丧假审核中", "事假审核中", "年假审核中", "产假审核中", "婚假审核中", "病假审核中", "调休审核中", "调休审核中", "上午上班忘记打卡审核中", "上午上班迟到忘记打卡审核中", "下午上班忘记打卡审核中", "下午下班忘记打卡审核中", "上午下班忘记打卡审核中", "审核中" };
@@ -190,7 +201,7 @@ namespace ADTO.DCloud.Attendances.Attendance
                 }
                 if (stutus.Contains("忘记打卡"))
                 {
-                    string[] wdk = new string[] { "上午上班忘记打卡", "上午上班迟到忘记打卡", "下午上班忘记打卡", "下午下班忘记打卡", "上午下班忘记打卡" };
+                    string[] wdk = new string[] { "上午上班忘记打卡", "上午下班忘记打卡", "下午上班忘记打卡", "下午下班忘记打卡", "上午上班忘记打卡审核中", "上午下班忘记打卡审核中", "下午上班忘记打卡审核中", "下午下班忘记打卡审核中" };
                     stutus = stutus.Concat(wdk).ToArray();
                 }
 
@@ -211,7 +222,7 @@ namespace ADTO.DCloud.Attendances.Attendance
                     query = query.Where(x => stutus.Contains(x.AMInType) || stutus.Contains(x.PMOutType));
                 }
             }
-            string permissionCode = PermissionHelper.GetPermissionCode(this.GetType().GetMethod(nameof(GetAttendancePagedList)));
+            string permissionCode = GetCurrentPermissionCode();
             //数据权限
             var filteredQuery = await _dataAuthorizesApp.CreateDataAuthorizesFilteredQuery(query, permissionCode);
             query = filteredQuery.Query;
@@ -231,7 +242,20 @@ namespace ADTO.DCloud.Attendances.Attendance
                 return item;
             }).ToList();
 
-            return new PagedResultWithAuthDto<AttendanceLogJoinDto>(totalCount, list);
+            return new PagedResultDto<AttendanceLogJoinDto>(totalCount, list);
+        }
+        #endregion
+
+        #region 删除
+
+        /// <summary>
+        /// 删除考勤状态
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public async Task DeleteAsync(EntityDto<Guid> input)
+        {
+            await _repository.DeleteAsync(input.Id);
         }
         #endregion
 
@@ -241,16 +265,7 @@ namespace ADTO.DCloud.Attendances.Attendance
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        [DataAuthPermission(PermissionNames.Pages_Attendances_List)]
-        public async Task UpdateAttendanceLogsBtn(UpdateAttendanceLogsRequestDto input)
-        {
-            await this.UpdateAttendanceLogs(input);
-        }
-        /// <summary>
-        /// 更新考勤状态-2022-11-29号重新
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        //[DataAuthPermission(PermissionNames.Pages_Attendances_List_UpdateAttendanceLogs)]
         [HttpPost]
         public async Task UpdateAttendanceLogs(UpdateAttendanceLogsRequestDto input)
         {
@@ -258,24 +273,31 @@ namespace ADTO.DCloud.Attendances.Attendance
             {
                 input.StartDate = input.StartDate.ToString("yyyy-MM-dd").ToDate();
                 input.EndDate = input.EndDate.ToString("yyyy-MM-dd").ToDate().AddSeconds(86399);
-                var employeeList = await _employeeInfoAppService.GetUserJobDate(new EmployeeManager.Dto.GetJobDateRequestInput() { PageSize = int.MaxValue, CompanyId = input.CompanyId, DepartmentId = input.DepartmentId, Keyword = input.Keyword, StartDate = input.StartDate, EndDate = input.EndDate });
+                var employeeList = await _employeeInfoAppService.GetUserJobDate(new EmployeeManager.Dto.GetJobDateRequestInput() { PageSize = int.MaxValue, UserId = input.UserId, CompanyId = input.CompanyId, DepartmentId = input.DepartmentId, Keyword = input.Keyword, StartDate = input.StartDate, EndDate = input.EndDate });
                 if (employeeList.Count() <= 0)
                     throw new UserFriendlyException(L("操作成功，没有找到对应用户信息"));
+                //获取用户考勤状态总数
+                var attendanceLogList = await GetAttendanceLogs(input);
+                //判断是否选择更新，如果是只更新当前选中的员工考勤状态
+                if (input.IdList != null && input.IdList.Count > 0)
+                    employeeList = employeeList.Where(x => attendanceLogList.Select(d => d.UserId).Contains(x.UserId));
+
                 //获取考勤机
                 var machinesList = await GetMachinesList();
                 var holidayList = await GetPublicHoliDayList(new GetPublicHoliDayRequestInput() { EndDate = input.EndDate, StartDate = input.StartDate });
                 //是否考勤（0：双休打卡/1：固定打卡/2：单休打卡/3：排班打卡，4：大小周，5：不打卡）---数据字典
-                var dataitems = await _itemDetailAppService.GetItemDetailList(new DataItem.Dto.DataItemQueryDto() { ItemCode = "IsAttType" });
-                //获取用户考勤机记录总数
-                var attendanceLogList = await GetAttendanceLogs(input);
+                //var dataitems = await _itemDetailAppService.GetItemDetailList(new DataItem.Dto.DataItemQueryDto() { ItemCode = "IsAttType" });
+                //这里获取员工工号，是申请流程时根据用户Id查询对应的记录
+                var employeeEneity = employeeList.FirstOrDefault(x => x.UserId.Equals(input.UserId)) ?? new GetUserIsActiveDto();
+
                 //获取考勤时间数据列表
                 var ruleTimes = await _timeRuleAppService.GetAllAsync(new AttendanceTimeRules.Dto.GetAttendanceTimeRuleInput() { });
                 //获取考勤时间数据列表
                 var times = await _timeAppService.GetAttendanceListAsync();
                 //获取员工考-勤机打卡记录
-                var attLogList = await GetAttendanceCheckTime(new GetAttendanceCheckTimeInput() { StartDate = input.StartDate, EndDate = input.EndDate });
+                var attLogList = await GetAttendanceCheckTime(new GetAttendanceCheckTimeInput() { StartDate = input.StartDate, EndDate = input.EndDate, Name = employeeEneity.Name, UserName = employeeEneity.UserName });
                 //获取钉钉记录
-                var dingdingLogs = await _dingdingLogAppService.GetDingdingUserAttLog(new DingDingAttLogs.Dto.GetDingdingUserAttLogInput() { StartDate = input.StartDate, EndDate = input.EndDate });
+                var dingdingLogs = await _dingdingLogAppService.GetDingdingUserAttLog(new DingDingAttLogs.Dto.GetDingdingUserAttLogInput() { StartDate = input.StartDate, EndDate = input.EndDate, UserName = employeeEneity.UserName });
                 //获取请假记录
                 var absList = await _absAppService.GetAbsListAsync(new ApplicationForm.Abs.Dto.GetAdtoAbsInput() { EndDate = input.EndDate, StartDate = input.StartDate, Keyword = input.Keyword });
                 //获取考勤异常记录
@@ -312,7 +334,7 @@ namespace ADTO.DCloud.Attendances.Attendance
                         {
                             continue;
                         }
-                        var dataitem = dataitems.FirstOrDefault(x => x.ItemValue == user.IsAttType);
+                        //var dataitem = dataitems.FirstOrDefault(x => x.ItemValue == user.IsAttType);
                         //是否考勤（0：双休打卡/1：固定打卡/2：单休打卡/3：排班打卡，4：大小周，5：不打卡）
                         //正常打卡，如果用户打卡类型是正常打卡,并且公休日的状态不为0（0表示正常上班，1表示休息）则跳出循环，不生成相关考勤
                         if (user.IsAttType == EnumUserCheckInType.NormalPunch.ToString() && holiday.State != 0)
@@ -342,13 +364,10 @@ namespace ADTO.DCloud.Attendances.Attendance
                         }
 
                         //根据入职时间判断，如果入职时间小于当前选择的时间，不生成考勤数据
-                        if (user.InJobDate.HasValue)
+                        if (user.InJobDate.HasValue && DateTime.Compare(holiday.HoliDay, user.InJobDate.Value.Date) < 0)
                         {
-                            if (DateTime.Compare(holiday.HoliDay, user.InJobDate.Value.Date) < 0)
-                            {
-                                Logger.Log(LogSeverity.Info, $"------------------考勤更新：{user.UserName}-{user.Name}入职时间小于当前选择的时间 -------------------------");
-                                continue;
-                            }
+                            Logger.Log(LogSeverity.Info, $"------------------考勤更新：{user.UserName}-{user.Name}入职时间小于当前选择的时间 -------------------------");
+                            continue;
                         }
                         //判断离职日期是否有值
                         if (user.OutJobDate.HasValue)
@@ -367,16 +386,16 @@ namespace ADTO.DCloud.Attendances.Attendance
                         }
                         #endregion
 
+                        var attendanceLogsTempEntity = attendanceLogList.FirstOrDefault(x => x.AttDate.Date == holiday.HoliDay.Date && x.UserName.Contains(user.UserName)) ?? new AttendanceLog();
                         //考勤时间规则
                         var rules = ruleTimes.FirstOrDefault(x => x.Id.Equals(user.AttTimeRuleId));
                         var timeIds = rules.AttendanceTimeIds.Split(',').Select(part => Guid.Parse(part.Trim())).ToList();
-                        var attendanceLogsTempEntity = attendanceLogList.FirstOrDefault(x => x.UserName.Contains(user.UserName)) ?? new AttendanceLog();
                         attendanceLogsTempEntity.UserId = user.UserId;
                         attendanceLogsTempEntity.UserName = user.UserName;
                         attendanceLogsTempEntity.Name = user.Name;
-                        attendanceLogsTempEntity.CompanyId = user.CompanyId;
+                        attendanceLogsTempEntity.CompanyId = user.CompanyId ?? Guid.Empty;
                         attendanceLogsTempEntity.DepartmentId = user.DepartmentId;
-                        attendanceLogsTempEntity.AttDate = holiday.HoliDay.ToString("yyyy-MM-dd").ToDate();
+                        attendanceLogsTempEntity.AttDate = holiday.HoliDay.Date;
                         //默认-办公地点
                         attendanceLogsTempEntity.LocationId = user.OfficeLocation;
                         attendanceLogsTempEntity.AMInLocationId = attendanceLogsTempEntity.AMInLocationId.HasValue ? attendanceLogsTempEntity.AMInLocationId : user.OfficeLocation;
@@ -478,7 +497,7 @@ namespace ADTO.DCloud.Attendances.Attendance
                             //不按结束日期开始日期，默认按开始时间月的第一天~开始时间月的最后一天
                             attendanceLogsEntities.Add(attendanceLogsTempEntity);
                         }
-                        if (attendanceLogsEntities.Where(d => d.AttDate == attendanceLogsTempEntity.AttDate && d.UserName == attendanceLogsTempEntity.UserName).Count() <= 0)
+                        if (attendanceLogsEntities.Where(d => d.AttDate.Date == attendanceLogsTempEntity.AttDate.Date && d.UserName.Equals(attendanceLogsTempEntity.UserName)).Count() <= 0)
                         {
                             //修改2022-03-08，妇女节，公司全部女生放半天，考勤记录调整
                             if (attendanceLogsTempEntity.AttDate.ToString("MM-dd") == "03-08" && user.Gender == "0")
@@ -498,12 +517,12 @@ namespace ADTO.DCloud.Attendances.Attendance
                 //排班考勤
                 if (attendanceLogsEntities.Count() <= 0)
                     throw new UserFriendlyException(L("操作成功，没有任何考勤需要更新"));
-                foreach (var item in attendanceLogsEntities)
+                foreach (var entity in attendanceLogsEntities)
                 {
-                    var entity = ObjectMapper.Map<AttendanceLog>(item);
-                    if (item.Id == Guid.Empty)
+                    if (entity.Id == Guid.Empty)
                         await _repository.InsertAsync(entity);
-                    else await _repository.UpdateAsync(entity);
+                    else
+                        await _repository.UpdateAsync(entity);
                 }
             }
             catch (Exception ex)
@@ -1123,6 +1142,241 @@ namespace ADTO.DCloud.Attendances.Attendance
 
         #endregion
 
+        #region 获取员工考勤机打卡记录和钉钉记录，一个接口返回数据
+        /// <summary>
+        /// 获取员工考勤机-打卡记录 和  钉钉记录
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        [DataAuthPermission("GetPagedAttendanceRecordList")]
+        public async Task<PagedResultWithAuthDto<AttendanceRecordOrDingdingDto>> GetPagedAttendanceRecordOrDingdingList(GetAttendanceLogListInput input)
+        {
+            input.StartDate = input.StartDate.Date;
+            input.EndDate = input.EndDate.Date.AddSeconds(86399);
+            var attendanceQuery = from checkin in _chekinoutRepository.GetAll()
+                                  join userInfo in _userinfoRepository.GetAll() on checkin.USERID equals userInfo.Id
+                                  join employee in _userRepository.GetAll() on userInfo.BADGENUMBER equals employee.UserName
+                                  join department in _oganizationUnitRepository.GetAll() on employee.DepartmentId equals department.Id
+                                  join company in _oganizationUnitRepository.GetAll() on employee.CompanyId equals company.Id
+                                  where checkin.CheckTime >= input.StartDate && checkin.CheckTime <= input.EndDate
+                                  select new AttendanceRecordOrDingdingDto
+                                  {
+                                      Name = employee.Name,
+                                      UserName = employee.UserName,
+                                      AttDate = checkin.CheckTime,
+                                      SENSORID = checkin.SENSORID,
+                                      UserId = employee.Id,
+                                      Type = "考勤机",// checkin.SENSORID,//$"考勤机-{checkin.SENSORID}",
+                                      MachineAddress = "",
+                                      DeptpartmentId = department.Id,
+                                      DeptpartmentName = department.DisplayName,
+                                      CompanyId = company.Id,
+                                      CompanyName = company.DisplayName
+                                  };
+            attendanceQuery = attendanceQuery.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.UserName.Equals(input.Keyword) || x.Name.Contains(input.Keyword));
+            var dingdingQuery = from dingding in _dingddingRepository.GetAll()
+                                join user in _userRepository.GetAll() on dingding.UserName equals user.UserName
+                                join department in _oganizationUnitRepository.GetAll() on user.DepartmentId equals department.Id
+                                join company in _oganizationUnitRepository.GetAll() on user.CompanyId equals company.Id
+                                where dingding.Timestamp >= input.StartDate && dingding.Timestamp <= input.EndDate
+                                select new AttendanceRecordOrDingdingDto
+                                {
+                                    Name = dingding.Name,
+                                    UserName = dingding.UserName,
+                                    AttDate = dingding.Timestamp,
+                                    SENSORID = "DingTalk",           // 钉钉来源固定标识
+                                    UserId = user.Id,               // 假设有 UserId
+                                    Type = "钉钉打卡",
+                                    MachineAddress = dingding.DetailPlace,
+                                    DeptpartmentId = department.Id,
+                                    DeptpartmentName = department.DisplayName,
+                                    CompanyId = company.Id,
+                                    CompanyName = company.DisplayName
+
+                                };
+            dingdingQuery = dingdingQuery.WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.UserName.Equals(input.Keyword) || x.Name.Contains(input.Keyword));
+            // 5. 最后统一投影到 DTO（此时所有客户端表达式都在 Concat 之后）
+            var resultQuery = attendanceQuery.Concat(dingdingQuery);
+            //    .Select(x => new AttendanceRecordOrDingdingDto
+            //{
+            //    Name = x.Name,
+            //    UserName = x.UserName,
+            //    AttDate = x.AttDate,
+            //    SENSORID = x.SENSORID,
+            //    UserId = x.UserId,
+            //    // 根据 SourceType 动态生成 Type 字符串
+            //    Type = x.Type,
+            //    MachineAddress = x.MachineAddress,
+            //    DeptpartmentId = x.DeptpartmentId,
+            //    DeptpartmentName = x.DeptpartmentName,
+            //    CompanyId = x.CompanyId,
+            //    CompanyName = x.CompanyName
+            //});
+
+            string permissionCode = GetCurrentPermissionCode();
+            //数据权限
+            var filteredQuery = await _dataAuthorizesApp.CreateDataAuthorizesFilteredQuery(resultQuery, permissionCode);
+            var query = filteredQuery.Query;
+
+
+
+            //if (!string.IsNullOrEmpty(input.Sorting))
+            //    resultQuery = resultQuery.OrderBy(input.Sorting);
+            var totalCount = query.Count();
+            var list = await query.PageBy(input).ToListAsync();
+            //办公地点
+            var machinesDtos = await GetMachinesList();
+            var listDtos = list.Select(item =>
+            {
+                if (item.SENSORID != "DingTalk")
+                {
+                    var machine = machinesDtos.FirstOrDefault(x => x.MachineAddress.Equals(item.SENSORID));
+                    item.MachineAddress = machine != null ? machine.Description : "";
+                }
+                return item;
+            }).ToList();
+
+            return new PagedResultWithAuthDto<AttendanceRecordOrDingdingDto>(totalCount, list);
+
+        }
+
+        #endregion
+
+        #region 考勤月报表
+
+        /// <summary>
+        /// 考勤月报表
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        [DataAuthPermission("GetMonthReport")]
+        public async Task<PagedResultWithAuthDto<MonthReportDto>> GetMonthReport(GetMonthReportInput input)
+        {
+            input.StartDate = input.StartDate.Date;
+            input.EndDate = input.EndDate.Date.AddSeconds(86399);
+
+            var query = _employeeRepository.GetAll().Where(x => x.IsAttType != EnumUserCheckInType.NoCheckin.ToString());
+            query = query.WhereIf(input.CompanyId.HasValue, x => x.CompanyId.Equals(input.CompanyId))
+                .WhereIf(input.DepartmentId.HasValue, x => x.DepartmentId.Equals(input.DepartmentId))
+                .WhereIf(!input.Keyword.IsNullOrEmpty(), x => x.Name.Equals(input.Keyword) || x.UserName.Equals(input.Keyword))
+                .Where(x => (x.IsActive && x.InJobDate <= input.EndDate && (x.OutJobDate >= input.EndDate || x.OutJobDate == null || x.InJobDate == null))
+                || (x.IsActive.Equals(false) && x.InJobDate <= input.EndDate && x.OutJobDate >= input.EndDate)
+                || (x.IsActive.Equals(false) && x.InJobDate <= input.EndDate && x.OutJobDate >= input.StartDate))
+                ;
+            //获取总数
+            var resultCount = await query.CountAsync();
+            var list = query.PageBy(input).ToList();
+            var listDtos = list.Select(item =>
+            {
+                var dto = ObjectMapper.Map<MonthReportDto>(item);
+                return dto;
+            }).ToList();
+            return new PagedResultWithAuthDto<MonthReportDto>(resultCount, listDtos);
+        }
+
+        #endregion
+
+        #region 分组查询餐补统计数据
+        /// <summary>
+        /// 餐补分组统计接口
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        [DataAuthPermission("GetAttendancerMealStatistics")]
+        public async Task<PagedResultDto<AttendancerMealStatisticsDto>> GetAttendancerMealStatistics(GetAttendancerMealStatisticsInput input)
+        {
+            input.StartDate = input.StartDate.Date;
+            input.EndDate = input.EndDate.Date.AddSeconds(86399);
+            var query = _mealgRepository.GetAll();
+            query = query.Where(x => x.AttDate >= input.StartDate && x.AttDate <= input.EndDate)
+                .WhereIf(!string.IsNullOrEmpty(input.Keyword), x => x.Name.Contains(input.Keyword) || x.UserName.Equals(input.Keyword))
+                .WhereIf(input.DepartmentId.HasValue, x => x.DepartmentId.Equals(input.DepartmentId))
+                .WhereIf(input.CompanyId.HasValue, x => x.CompanyId.Equals(input.CompanyId))
+                ;
+            string permissionCode = GetCurrentPermissionCode();
+            //数据权限
+            var filteredQuery = await _dataAuthorizesApp.CreateDataAuthorizesFilteredQuery(query, permissionCode);
+            query = filteredQuery.Query;
+            // 2. 分组聚合
+            var result = query.GroupBy(x => new { x.UserId, x.UserName })
+                              .Select(g => new
+                              {
+                                  g.Key.UserId,
+                                  g.Key.UserName,
+                                  Name = g.Max(x => x.Name),
+                                  DepartmentId = g.Max(x => x.DepartmentId),
+                                  CompanyId = g.Max(x => x.CompanyId),
+                                  LunchCount = g.Sum(x => x.LunchCount),
+                                  LunchPrice = g.Sum(x => x.LunchPrice),
+                                  DinnerCount = g.Sum(x => x.DinnerCount),
+                                  DinnerPrice = g.Sum(x => x.DinnerPrice),
+                                  TotalPrice = g.Sum(x => x.TotalPrice)
+                              });
+            //获取总数
+            var resultCount = await result.CountAsync();
+            var list = result.PageBy(input).ToList();
+            var listDtos = list.GroupBy(g => g.UserId).Select(item =>
+            {
+                var dto = ObjectMapper.Map<AttendancerMealStatisticsDto>(item);
+                return dto;
+            }).ToList();
+            return new PagedResultWithAuthDto<AttendancerMealStatisticsDto>(resultCount, listDtos);
+        }
+        #endregion
+
+
+        #region 获取员工考勤机-打卡记录
+        /// <summary>
+        /// 获取员工考勤机-打卡记录
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        [DataAuthPermission("GetPagedAttendanceRecordList")]
+        public async Task<PagedResultWithAuthDto<CHECKINOUTDto>> GetPagedAttendanceRecordList(GetAttendanceLogListInput input)
+        {
+            input.StartDate = input.StartDate.Date;
+            input.EndDate = input.EndDate.Date.AddSeconds(86399);
+            var query = from checkin in _chekinoutRepository.GetAll()
+                        join userInfo in _userinfoRepository.GetAll() on checkin.USERID equals userInfo.Id
+                        join employee in _userRepository.GetAll() on userInfo.BADGENUMBER equals employee.UserName
+                        select new CHECKINOUTDto
+                        {
+                            Name = employee.Name,
+                            UserName = employee.UserName,
+                            CHECKTYPE = checkin.CHECKTYPE,
+                            CheckTime = checkin.CheckTime,
+                            SENSORID = checkin.SENSORID,
+                            SN = checkin.SN,
+                            UserId = employee.Id,
+                            UserInfoId = checkin.USERID,
+                            VERIFYCODE = checkin.VERIFYCODE,
+                        }
+            ;
+            string permissionCode = GetCurrentPermissionCode();
+            //数据权限
+            var filteredQuery = await _dataAuthorizesApp.CreateDataAuthorizesFilteredQuery(query, permissionCode);
+            query = filteredQuery.Query;
+
+            query = query.Where(x => x.CheckTime >= input.StartDate && x.CheckTime <= input.EndDate)
+                .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.UserName.Equals(input.Keyword) || x.Name.Contains(input.Keyword));
+
+            if (!string.IsNullOrEmpty(input.Sorting))
+                query = query.OrderBy(input.Sorting);
+            var totalCount = query.Count();
+            var list = await query.PageBy(input).ToListAsync();
+            //办公地点
+            var machinesDtos = await GetMachinesList();
+            var listDtos = list.Select(item =>
+            {
+                var machine = machinesDtos.FirstOrDefault(x => x.MachineAddress.Equals(item.SENSORID));
+                item.OfficeLocation = machine != null ? machine.Description : "";
+                return item;
+            }).ToList();
+
+            return new PagedResultWithAuthDto<CHECKINOUTDto>(totalCount, list);
+        }
+        #endregion
+
         #region 根据时间关键词获取员工考勤机考勤打卡记录
         /// <summary>
         /// 根据时间关键词获取员工考勤机-考勤打卡记录
@@ -1143,6 +1397,7 @@ namespace ADTO.DCloud.Attendances.Attendance
             var list = await query
                 .Where(x => x.CheckTime >= input.StartDate && x.CheckTime <= input.EndDate)
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Equals(input.Keyword) || x.UserName.Equals(input.Keyword))
+                .WhereIf(!string.IsNullOrWhiteSpace(input.Name) || !string.IsNullOrWhiteSpace(input.UserName), x => x.Name.Equals(input.Name) || x.UserName.Equals(input.UserName))
                 .ToListAsync();
             //cacheManager.Set(cacheKey, list);
             return list;
@@ -1159,12 +1414,50 @@ namespace ADTO.DCloud.Attendances.Attendance
         /// <returns></returns>
         private async Task<IEnumerable<AttendanceLog>> GetAttendanceLogs(UpdateAttendanceLogsRequestDto input)
         {
+            input.StartDate = input.StartDate.ToString("yyyy-MM-dd").ToDate();
+            input.EndDate = input.EndDate.ToString("yyyy-MM-dd").ToDate().AddSeconds(86399);
             var query = _repository.GetAll()
                 .Where(x => x.AttDate >= input.StartDate && x.AttDate <= input.EndDate)
+                .WhereIf(input.IdList != null && input.IdList.Count > 0, x => input.IdList.Contains(x.Id))
+                .WhereIf(input.UserId != Guid.Empty, x => x.UserId.Equals(input.UserId))
                 .WhereIf(input.CompanyId.HasValue, x => x.CompanyId.Equals(input.CompanyId))
                 .WhereIf(input.DepartmentId.HasValue, x => x.DepartmentId.Equals(input.DepartmentId))
                 .WhereIf(!string.IsNullOrWhiteSpace(input.Keyword), x => x.Name.Contains(input.Keyword) || x.UserName.Contains(input.Keyword));
-            return await query.ToListAsync();
+
+            if (input.Status != null && input.Status.Count() > 0)
+            {
+                var stutus = input.Status;
+                if (stutus.Contains("审核中"))
+                {
+                    string[] shz = new string[] { "外出审核中", "出差审核中", "丧假审核中", "事假审核中", "年假审核中", "产假审核中", "婚假审核中", "病假审核中", "调休审核中", "调休审核中", "上午上班忘记打卡审核中", "上午上班迟到忘记打卡审核中", "下午上班忘记打卡审核中", "下午下班忘记打卡审核中", "上午下班忘记打卡审核中", "审核中" };
+                    stutus = stutus.Concat(shz).ToArray();
+                }
+                if (stutus.Contains("忘记打卡"))
+                {
+                    string[] wdk = new string[] { "上午上班忘记打卡", "上午上班迟到忘记打卡", "下午上班忘记打卡", "下午下班忘记打卡", "上午下班忘记打卡" };
+                    stutus = stutus.Concat(wdk).ToArray();
+                }
+
+                if (stutus.Contains("审核中") && stutus.Contains("假"))
+                {
+                    query = query.Where(x => x.AMInType.Contains("审核中") || x.PMOutType.Contains("审核中") || x.AMInType.Contains("假") || x.PMOutType.Contains("假") || stutus.Contains(x.AMInType) || stutus.Contains(x.PMOutType));
+                }
+                else if (stutus.Contains("审核中") && stutus.Contains("忘记打卡"))
+                {
+                    query = query.Where(x => x.AMInType.Contains("审核中") || x.PMOutType.Contains("审核中") || x.AMInType.Contains("忘记打卡") || x.PMOutType.Contains("忘记打卡") || stutus.Contains(x.AMInType) || stutus.Contains(x.PMOutType));
+                }
+                else if (stutus.Contains("新冠确诊"))
+                {
+                    query = query.Where(x => x.AMInType.Contains("新冠确诊") || x.PMOutType.Contains("新冠确诊") || stutus.Contains(x.AMInType) || stutus.Contains(x.PMOutType));
+                }
+                else
+                {
+                    query = query.Where(x => stutus.Contains(x.AMInType) || stutus.Contains(x.PMOutType));
+                }
+            }
+            var list = await query.ToListAsync();
+            //var listDtos = ObjectMapper.Map<List<AttendanceLogDto>>(list);
+            return list;
         }
         #endregion
 
@@ -1206,12 +1499,49 @@ namespace ADTO.DCloud.Attendances.Attendance
                 var list = query.Where(q => q.HoliDay >= input.StartDate && q.HoliDay <= input.EndDate);
                 var listDto = ObjectMapper.Map<IEnumerable<PublicHoliDayDto>>(list);
                 //cacheManager.Set(cacheKey, listDto);
-                return listDto;
+                return listDto.OrderBy(o => o.HoliDay);
 
             }) as IEnumerable<PublicHoliDayDto>;
             return list;
         }
         #endregion
+
+        #region 修改考勤状态
+        /// <summary>
+        /// 修改考勤状态--考勤异常  Guid userId, DateTime attDate
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="attDate"></param>
+        /// <returns></returns>
+        public async Task UpdateAttendanceLog(Guid processId, string schemeCode)
+        {
+            switch (schemeCode)
+            {
+                case "KQ004"://考勤异常
+                    var att = await _attAppService.GetAsync(new EntityDto<Guid> { Id = processId });
+                    if (att != null && att.Id != Guid.Empty)
+                        await UpdateAttendanceLogs(new UpdateAttendanceLogsRequestDto() { StartDate = att.AttDate, EndDate = att.AttDate, UserId = att.UserId });
+                    break;
+                case "ADTO_ABS_2026"://请假
+                    var abs = await _absAppService.GetAsync(new EntityDto<Guid> { Id = processId });
+                    if (abs != null && abs.Id != Guid.Empty)
+                        await UpdateAttendanceLogs(new UpdateAttendanceLogsRequestDto() { StartDate = abs.StartDate, EndDate = abs.EndDate, UserId = abs.UserId });
+                    break;
+                case "ADTO_OUT_2026"://外出
+                    var outatt = await _outAppService.GetAsync(new EntityDto<Guid> { Id = processId });
+                    if (outatt != null && outatt.Id != Guid.Empty)
+                        await UpdateAttendanceLogs(new UpdateAttendanceLogsRequestDto() { StartDate = outatt.StartDate, EndDate = outatt.EndDate, UserId = outatt.UserId });
+                    break;
+                case "KQ002"://出差
+                    var onb = await _onbAppService.GetAsync(new EntityDto<Guid> { Id = processId });
+                    if (onb != null && onb.Id != Guid.Empty)
+                        await UpdateAttendanceLogs(new UpdateAttendanceLogsRequestDto() { StartDate = onb.StartDate, EndDate = onb.EndDate, UserId = onb.UserId });
+                    break;
+            }
+            //await UpdateAttendanceLogs(new UpdateAttendanceLogsRequestDto() { StartDate = attDate, EndDate = attDate, UserId = userId });
+        }
+        #endregion
+
 
         #region 扩展方法
         /// <summary>
