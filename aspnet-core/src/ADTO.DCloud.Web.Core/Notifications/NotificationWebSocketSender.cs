@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using ADTO.DCloud.Notifications.WS;
 using ADTOSharp.Dependency;
 using ADTOSharp.Notifications;
+using ADTOSharp;
 
 namespace ADTO.DCloud.Notifications;
 

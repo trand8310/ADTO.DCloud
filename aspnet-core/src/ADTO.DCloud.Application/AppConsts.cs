@@ -8,7 +8,7 @@ public class AppConsts
     public static readonly Guid AdminUserId1 = Guid.Parse("00000000-0000-0000-0000-000000000001");
     public static readonly Guid AdminUserId2 = Guid.Parse("00000000-0000-0000-0000-000000000002");
 
-
+    public static string KeepAlivePath => "keepalive/index";
 
     public const int DefaultPageSize = 10;
     public const int MaxPageSize = 1000;
