@@ -18,6 +18,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
         private readonly IEnumerable<ICycleConfigParser> _cycleParsers;
         private readonly ILogger<DynamicTaskManager> _logger;
         private readonly ConcurrentDictionary<Guid, Timer> _activeTimers = new();
+        private readonly ConcurrentDictionary<Guid, DateTime> _lastScheduledTimes = new();
         private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _taskLocks = new();
         private readonly SemaphoreSlim _reloadLock = new(1, 1);
         private readonly ITaskSchedulerAppService _taskSchedulerAppService;
@@ -96,14 +97,15 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 initialDelay = TimeSpan.Zero;
             }
 
-            // 创建定时器
+            // 创建单次触发定时器，执行完成后按配置重新计算下次触发时间
             var timer = new Timer(
-                async _ => await ExecuteTaskAsync(taskConfig.Id),
+                async _ => await ExecuteAndRescheduleTaskAsync(taskConfig.Id),
                 null,
                 initialDelay,
-                parser.GetInterval(taskConfig.CycleJsonValue));
+                Timeout.InfiniteTimeSpan);
 
             _activeTimers[taskConfig.Id] = timer;
+            _lastScheduledTimes[taskConfig.Id] = nextExecutionTime;
 
             _logger.LogInformation($"Scheduled task: {taskConfig.Title} (ID: {taskConfig.Id}), " +
                                  $"Next run at: {nextExecutionTime:yyyy-MM-dd HH:mm:ss}");
@@ -145,16 +147,6 @@ namespace ADTO.DCloud.Tasks.TaskManage
             {
                 _logger.LogInformation($"Starting task: {taskConfig.Title} (ID: {taskId})");
 
-                // 更新最后执行时间
-                //taskConfig.LastExecutionTime = DateTime.Now;
-                //dbContext.BackgroundTasks.Update(taskConfig);
-                var parser = _cycleParsers.FirstOrDefault(p => p.CanParse(taskConfig.CycleType));
-                if (parser != null)
-                {
-                    var nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, DateTime.Now);
-                    await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
-                }
-
                 // 执行任务
                 if (taskConfig.ExecuteName.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
@@ -191,6 +183,63 @@ namespace ADTO.DCloud.Tasks.TaskManage
             }
         }
 
+
+        private async Task ExecuteAndRescheduleTaskAsync(Guid taskId)
+        {
+            try
+            {
+                await ExecuteTaskAsync(taskId);
+            }
+            finally
+            {
+                await RescheduleTaskAsync(taskId);
+            }
+        }
+
+        private async Task RescheduleTaskAsync(Guid taskId)
+        {
+            if (!_activeTimers.TryGetValue(taskId, out var timer))
+            {
+                return;
+            }
+
+            var taskConfig = await _taskSchedulerAppService.GetTaskSchedulerByIdUnitOfWork(taskId);
+            if (taskConfig == null || !taskConfig.State)
+            {
+                if (_activeTimers.TryRemove(taskId, out var removedTimer))
+                {
+                    removedTimer.Dispose();
+                }
+                _lastScheduledTimes.TryRemove(taskId, out _);
+                return;
+            }
+
+            var parser = _cycleParsers.FirstOrDefault(p => p.CanParse(taskConfig.CycleType));
+            if (parser == null)
+            {
+                _logger.LogWarning("No parser found for cycle type: {CycleType}", taskConfig.CycleType);
+                return;
+            }
+
+            var lastScheduleTime = _lastScheduledTimes.GetOrAdd(taskId, _ => DateTime.Now);
+            var nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, lastScheduleTime);
+            var now = DateTime.Now;
+            if (nextExecutionTime <= now)
+            {
+                nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, now);
+            }
+
+            await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
+            _lastScheduledTimes[taskId] = nextExecutionTime;
+
+            var nextDelay = nextExecutionTime - now;
+            if (nextDelay < TimeSpan.Zero)
+            {
+                nextDelay = TimeSpan.Zero;
+            }
+
+            timer.Change(nextDelay, Timeout.InfiniteTimeSpan);
+        }
         /// <summary>
         /// 执行接口任务
         /// </summary>
@@ -254,6 +303,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 timer?.Dispose();
             }
             _activeTimers.Clear();
+            _lastScheduledTimes.Clear();
             return Task.CompletedTask;
         }
 
