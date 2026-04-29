@@ -237,13 +237,15 @@ namespace ADTO.DCloud.Web.Host.Startup
             app.UseStaticFiles();
 
             app.UseWebSockets();
-            app.UseMiddleware<ChatWebSocketMiddleware>();
 
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseJwtTokenMiddleware();
             app.UseAuthorization();
+
+            // 必须放在认证之后，才能正确拿到 session.UserId
+            app.UseMiddleware<ChatWebSocketMiddleware>();
 
             app.UseADTOSharpRequestLocalization();
 
