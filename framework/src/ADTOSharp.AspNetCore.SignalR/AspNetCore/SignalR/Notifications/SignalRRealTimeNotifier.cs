@@ -48,6 +48,7 @@ public class SignalRRealTimeNotifier : IRealTimeNotifier, ITransientDependency
             try
             {
                 var onlineClients = await _onlineClientManager.GetAllByUserIdAsync(userNotification);
+                await _webSocketSender.SendAsync(userNotification);
                 foreach (var onlineClient in onlineClients)
                 {
                     var signalRClient = _hubContext.Clients.Client(onlineClient.ConnectionId);
