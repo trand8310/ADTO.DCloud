@@ -13,6 +13,7 @@ using ADTO.DCloud.Tasks.Dto;
 using ADTO.DCloud.DataIcons.Dto;
 using ADTOSharp.Domain.Uow;
 using System.Transactions;
+using ADTO.DCloud.Tasks.TaskManage;
 
 namespace ADTO.DCloud.Tasks;
 
@@ -25,17 +26,20 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     private readonly IRepository<TaskScheduler, Guid> _taskSchedulerRepository;
     private readonly IRepository<TaskExecutionHistory, Guid> _taskExecutionHistoryRepository;
     private readonly IRepository<User, Guid> _userRepository;
+    private readonly IDynamicTaskManager _dynamicTaskManager;
     #endregion
 
     #region Ctor
     public TaskSchedulerAppService(
        IRepository<TaskScheduler, Guid> taskSchedulerRepository
        , IRepository<TaskExecutionHistory, Guid> taskExecutionHistoryRepository
-       ,IRepository<User, Guid> userRepository)
+       ,IRepository<User, Guid> userRepository
+       ,IDynamicTaskManager dynamicTaskManager)
     {
         _taskSchedulerRepository = taskSchedulerRepository;
         _taskExecutionHistoryRepository = taskExecutionHistoryRepository;
         _userRepository = userRepository;
+        _dynamicTaskManager = dynamicTaskManager;
     }
     #endregion
 
@@ -50,6 +54,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     {
         var item = ObjectMapper.Map<TaskScheduler>(input);
         await _taskSchedulerRepository.InsertAsync(item);
+        await SyncTaskScheduleAsync(item.Id);
     }
 
     /// <summary>
@@ -69,6 +74,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
 
         //转换一下，否则其它字段也会置空
         await _taskSchedulerRepository.UpdateAsync(info);
+        await SyncTaskScheduleAsync(info.Id);
     }
 
     /// <summary>
@@ -91,6 +97,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     public async Task DeleteTaskSchedulerAsync(EntityDto<Guid> input)
     {
         await _taskSchedulerRepository.DeleteAsync(input.Id);
+        await _dynamicTaskManager.RemoveTaskAsync(input.Id);
     }
 
     /// <summary>
@@ -156,6 +163,21 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     {
         var info = await _taskSchedulerRepository.GetAsync(Id);
         return ObjectMapper.Map<TaskSchedulerDto>(info);
+    }
+
+    private async Task SyncTaskScheduleAsync(Guid taskId)
+    {
+        var entity = await _taskSchedulerRepository.GetAll()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == taskId);
+
+        if (entity == null || !entity.State)
+        {
+            await _dynamicTaskManager.RemoveTaskAsync(taskId);
+            return;
+        }
+
+        await _dynamicTaskManager.UpdateTaskAsync(ObjectMapper.Map<TaskSchedulerDto>(entity));
     }
 
     /// <summary>

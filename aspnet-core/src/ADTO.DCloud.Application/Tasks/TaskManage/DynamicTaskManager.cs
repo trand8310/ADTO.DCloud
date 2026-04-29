@@ -381,6 +381,13 @@ namespace ADTO.DCloud.Tasks.TaskManage
             }
         }
 
+
+        public Task RemoveTaskAsync(Guid taskId)
+        {
+            RemoveTaskTimer(taskId);
+            return Task.CompletedTask;
+        }
+
         public async Task<bool> UpdateTaskAsync(TaskSchedulerDto taskConfig)
         {
             await _reloadLock.WaitAsync();

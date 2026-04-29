@@ -12,5 +12,6 @@ namespace ADTO.DCloud.Tasks.TaskManage
         Task StopAllAsync();
         Task ExecuteTaskNowAsync(Guid taskId);
         Task<bool> UpdateTaskAsync(TaskSchedulerDto taskConfig);
+        Task RemoveTaskAsync(Guid taskId);
     }
 }
