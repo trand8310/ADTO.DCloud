@@ -29,7 +29,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
        
 
             //// 注册后台服务
-            //services.AddHostedService<DynamicTaskBackgroundService>();
+            services.AddHostedService<ScheduleTaskBackgroundService>();
 
             services.AddHttpClient();
             return services;

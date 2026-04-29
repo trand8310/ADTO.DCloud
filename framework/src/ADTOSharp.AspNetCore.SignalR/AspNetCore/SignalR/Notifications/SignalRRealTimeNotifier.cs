@@ -24,16 +24,19 @@ public class SignalRRealTimeNotifier : IRealTimeNotifier, ITransientDependency
     private readonly IOnlineClientManager _onlineClientManager;
 
     private readonly IHubContext<ADTOSharpCommonHub> _hubContext;
+    private readonly INotificationWebSocketSender _webSocketSender;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SignalRRealTimeNotifier"/> class.
     /// </summary>
     public SignalRRealTimeNotifier(
         IOnlineClientManager onlineClientManager,
-        IHubContext<ADTOSharpCommonHub> hubContext)
+        IHubContext<ADTOSharpCommonHub> hubContext,
+        INotificationWebSocketSender webSocketSender)
     {
         _onlineClientManager = onlineClientManager;
         _hubContext = hubContext;
+        _webSocketSender = webSocketSender;
         Logger = NullLogger.Instance;
     }
 
@@ -45,6 +48,7 @@ public class SignalRRealTimeNotifier : IRealTimeNotifier, ITransientDependency
             try
             {
                 var onlineClients = await _onlineClientManager.GetAllByUserIdAsync(userNotification);
+                await _webSocketSender.SendAsync(userNotification);
                 foreach (var onlineClient in onlineClients)
                 {
                     var signalRClient = _hubContext.Clients.Client(onlineClient.ConnectionId);
