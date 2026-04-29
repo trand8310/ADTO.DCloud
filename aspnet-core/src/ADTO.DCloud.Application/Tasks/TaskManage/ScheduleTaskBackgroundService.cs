@@ -18,8 +18,11 @@ public class ScheduleTaskBackgroundService : BackgroundService
     private readonly ITaskSchedulerAppService _taskSchedulerAppService;
     private readonly ILogger<ScheduleTaskBackgroundService> _logger;
 
-    private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(30);
+    private readonly TimeSpan _scanInterval = TimeSpan.FromSeconds(15);
+    private readonly TimeSpan _reloadCooldown = TimeSpan.FromSeconds(10);
     private string _lastTaskFingerprint = string.Empty;
+    private int _reloadRunning;
+    private DateTime _lastReloadAtUtc = DateTime.MinValue;
 
     public ScheduleTaskBackgroundService(
         IDynamicTaskManager taskManager,
@@ -38,18 +41,16 @@ public class ScheduleTaskBackgroundService : BackgroundService
         await _taskManager.InitializeAsync();
         _lastTaskFingerprint = await BuildFingerprintAsync(stoppingToken);
 
-        while (!stoppingToken.IsCancellationRequested)
+        using var timer = new PeriodicTimer(_scanInterval);
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             try
             {
-                await Task.Delay(_refreshInterval, stoppingToken);
-
                 var currentFingerprint = await BuildFingerprintAsync(stoppingToken);
                 if (!string.Equals(currentFingerprint, _lastTaskFingerprint, StringComparison.Ordinal))
                 {
-                    _logger.LogInformation("Task configuration changed, reloading schedules.");
-                    await _taskManager.ReloadTasksAsync();
                     _lastTaskFingerprint = currentFingerprint;
+                    await TryReloadAsync(stoppingToken);
                 }
             }
             catch (OperationCanceledException)
@@ -64,6 +65,33 @@ public class ScheduleTaskBackgroundService : BackgroundService
 
         await _taskManager.StopAllAsync();
         _logger.LogInformation("ScheduleTaskBackgroundService stopped.");
+    }
+
+    private async Task TryReloadAsync(CancellationToken stoppingToken)
+    {
+        var nowUtc = DateTime.UtcNow;
+        if (nowUtc - _lastReloadAtUtc < _reloadCooldown)
+        {
+            _logger.LogDebug("Task config changed but reload is in cooldown window, skip this round.");
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _reloadRunning, 1, 0) != 0)
+        {
+            _logger.LogDebug("Task reload is already running, skip duplicated trigger.");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Task configuration changed, reloading schedules.");
+            await _taskManager.ReloadTasksAsync();
+            _lastReloadAtUtc = DateTime.UtcNow;
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _reloadRunning, 0);
+        }
     }
 
     private async Task<string> BuildFingerprintAsync(CancellationToken cancellationToken)
