@@ -1,6 +1,7 @@
 ﻿using ADTO.DCloud.Chat;
 using ADTO.DCloud.Chat.Dto;
 using ADTO.DCloud.Web.Xss;
+using ADTO.DCloud.Web.Chat.WebSocket;
 using ADTOSharp;
 using ADTOSharp.AspNetCore.SignalR.Hubs;
 using ADTOSharp.Localization;
@@ -27,6 +28,7 @@ public class ChatHub : OnlineClientHubBase
     private readonly IWindsorContainer _windsorContainer;
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly IOnlineClientStore _onlineClientStore;
+    private readonly IChatWebSocketConnectionManager _chatWebSocketConnectionManager;
     private bool _isCallByRelease;
     private IADTOSharpSession ChatAppSession { get; }
 
@@ -40,13 +42,15 @@ public class ChatHub : OnlineClientHubBase
         IOnlineClientManager onlineClientManager,
         IOnlineClientInfoProvider clientInfoProvider, 
         IHtmlSanitizer htmlSanitizer,
-        IOnlineClientStore onlineClientStore) : base(onlineClientManager, clientInfoProvider)
+        IOnlineClientStore onlineClientStore,
+        IChatWebSocketConnectionManager chatWebSocketConnectionManager) : base(onlineClientManager, clientInfoProvider)
     {
         _chatMessageManager = chatMessageManager;
         _localizationManager = localizationManager;
         _windsorContainer = windsorContainer;
         _htmlSanitizer = htmlSanitizer;
         _onlineClientStore = onlineClientStore;
+        _chatWebSocketConnectionManager = chatWebSocketConnectionManager;
         Logger = NullLogger.Instance;
         ChatAppSession = NullADTOSharpSession.Instance;
 
@@ -186,6 +190,7 @@ public class ChatHub : OnlineClientHubBase
             };
 
             await Clients.Group(input.GroupName).SendAsync("ReceiveGroupMessage", dto);
+            await _chatWebSocketConnectionManager.SendGroupAsync(input.GroupName, "ReceiveGroupMessage", dto);
 
             return string.Empty;
         }
@@ -222,6 +227,7 @@ public class ChatHub : OnlineClientHubBase
             };
 
             await Clients.All.SendAsync("ReceiveBroadcastMessage", dto);
+            await _chatWebSocketConnectionManager.SendAllAsync("ReceiveBroadcastMessage", dto);
 
             return string.Empty;
         }
@@ -264,6 +270,7 @@ public class ChatHub : OnlineClientHubBase
             {
                 await Clients.Client(client.ConnectionId)
                     .SendAsync("ReceiveSystemMessage", dto);
+                await _chatWebSocketConnectionManager.SendAsync(receiver, "ReceiveSystemMessage", dto);
             }
 
             return string.Empty;
