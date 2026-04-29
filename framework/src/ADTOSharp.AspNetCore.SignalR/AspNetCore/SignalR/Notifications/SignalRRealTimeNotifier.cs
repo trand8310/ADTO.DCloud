@@ -59,6 +59,7 @@ public class SignalRRealTimeNotifier : IRealTimeNotifier, ITransientDependency
                     }
 
                     await signalRClient.SendAsync("getNotification", userNotification);
+                    await _webSocketSender.SendAsync(userNotification);
                 }
             }
             catch (Exception ex)
