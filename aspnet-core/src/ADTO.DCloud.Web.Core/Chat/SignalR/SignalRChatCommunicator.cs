@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 using ADTO.DCloud.Chat;
 using ADTO.DCloud.Chat.Dto;
 using ADTO.DCloud.Friendships;
+using ADTO.DCloud.Web.Chat.WebSocket;
 using ADTO.DCloud.Friendships.Dto;
 
 namespace ADTO.DCloud.Web.Chat.SignalR;
@@ -26,13 +27,16 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
     private readonly IObjectMapper _objectMapper;
 
     private readonly IHubContext<ChatHub> _chatHub;
+    private readonly IChatWebSocketConnectionManager _webSocketConnectionManager;
 
     public SignalRChatCommunicator(
         IObjectMapper objectMapper,
-        IHubContext<ChatHub> chatHub)
+        IHubContext<ChatHub> chatHub,
+        IChatWebSocketConnectionManager webSocketConnectionManager)
     {
         _objectMapper = objectMapper;
         _chatHub = chatHub;
+        _webSocketConnectionManager = webSocketConnectionManager;
         Logger = NullLogger.Instance;
     }
 
@@ -53,7 +57,9 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
                 return;
             }
 
-            await signalRClient.SendAsync("getChatMessage", _objectMapper.Map<ChatMessageDto>(message));
+            var payload = _objectMapper.Map<ChatMessageDto>(message);
+            await signalRClient.SendAsync("getChatMessage", payload);
+            await _webSocketConnectionManager.SendAsync(client.UserId, "getChatMessage", payload);
         }
     }
 
@@ -79,6 +85,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             friendshipRequest.IsOnline = isFriendOnline;
 
             await signalRClient.SendAsync("getFriendshipRequest", friendshipRequest, isOwnRequest);
+            await _webSocketConnectionManager.SendAsync(client.UserId, "getFriendshipRequest", new { friendshipRequest, isOwnRequest });
         }
     }
 
@@ -100,6 +107,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getUserConnectNotification", user, isConnected);
+            await _webSocketConnectionManager.SendAsync(client.UserId, "getUserConnectNotification", new { user, isConnected });
         }
     }
 
@@ -114,6 +122,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getUserStateChange", user, newState);
+            await _webSocketConnectionManager.SendAsync(client.UserId, "getUserStateChange", new { user, newState });
         }
     }
 
@@ -134,6 +143,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getallUnreadMessagesOfUserRead", user);
+            await _webSocketConnectionManager.SendAsync(client.UserId, "getallUnreadMessagesOfUserRead", user);
         }
     }
 
@@ -154,6 +164,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getReadStateChange", user);
+            await _webSocketConnectionManager.SendAsync(client.UserId, "getReadStateChange", user);
         }
     }
 

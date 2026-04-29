@@ -3,6 +3,7 @@ using ADTO.DCloud.Configuration;
 using ADTO.DCloud.DataAuthorizes;
 using ADTO.DCloud.Identity;
 using ADTO.DCloud.Web.Chat.SignalR;
+using ADTO.DCloud.Web.Chat.WebSocket;
 using ADTO.DCloud.Web.Host.BackgroundJobs;
 using ADTO.DCloud.Web.Swagger;
 using ADTO.Swashbuckle;
@@ -234,6 +235,9 @@ namespace ADTO.DCloud.Web.Host.Startup
             app.UseCors(_defaultCorsPolicyName); // Enable CORS!
 
             app.UseStaticFiles();
+
+            app.UseWebSockets();
+            app.UseMiddleware<ChatWebSocketMiddleware>();
 
             app.UseRouting();
 
