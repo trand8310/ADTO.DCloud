@@ -33,7 +33,7 @@ public class LoginForm : Form
             response.EnsureSuccessStatusCode();
             var text = await response.Content.ReadAsStringAsync();
             var envelope = JsonSerializer.Deserialize<AuthEnvelope>(text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (envelope?.Result is null || !envelope.Result.Success)
+            if (envelope?.Result is null)
             {
                 _lbl.Text = "登录失败";
                 return;

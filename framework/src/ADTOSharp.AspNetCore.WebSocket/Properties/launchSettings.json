@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ADTOSharp.AspNetCore.WebSocket": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:61183;http://localhost:61184"
+    }
+  }
+}

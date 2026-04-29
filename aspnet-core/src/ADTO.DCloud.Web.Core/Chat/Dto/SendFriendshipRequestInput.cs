@@ -1,6 +1,6 @@
 using System;
 
-namespace ADTO.DCloud.Web.Chat.SignalR
+namespace ADTO.DCloud.Chat.Dto
 {
     public class SendFriendshipRequestInput
     {

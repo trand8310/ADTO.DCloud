@@ -1,10 +1,13 @@
+using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using ADTOSharp;
 using ADTOSharp.Runtime.Session;
+using Microsoft.AspNetCore.Http;
 
-namespace ADTO.DCloud.Web.Chat.WebSocket;
+namespace ADTO.DCloud.Chat.WS;
 
 public class ChatWebSocketMiddleware
 {

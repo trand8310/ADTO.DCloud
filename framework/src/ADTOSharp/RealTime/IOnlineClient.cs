@@ -41,6 +41,6 @@ namespace ADTOSharp.RealTime
         /// <summary>
         /// Can be used to add custom properties for this client.
         /// </summary>
-        Dictionary<string, object> Properties { get; }
+        Dictionary<string, object> Properties { get; set; }
     }
 }

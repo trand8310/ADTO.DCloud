@@ -1,13 +1,14 @@
+using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using ADTO.DCloud.Chat;
+using System.Threading;
+using System.Threading.Tasks;
 using ADTO.DCloud.Chat.Dto;
 using ADTOSharp;
 using ADTOSharp.Dependency;
 
-namespace ADTO.DCloud.Web.Chat.WebSocket;
-
+namespace ADTO.DCloud.Chat.WS;
 public class ChatWebSocketCommandHandler : IChatWebSocketCommandHandler, ITransientDependency
 {
     private readonly IChatMessageManager _chatMessageManager;

@@ -1,11 +1,16 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using ADTOSharp;
 using ADTOSharp.Dependency;
 
-namespace ADTO.DCloud.Web.Chat.WebSocket;
+namespace ADTO.DCloud.Chat.WS;
 
 public class ChatWebSocketConnectionManager : IChatWebSocketConnectionManager, ISingletonDependency
 {
@@ -53,6 +58,7 @@ public class ChatWebSocketConnectionManager : IChatWebSocketConnectionManager, I
     {
         return SendByFilterAsync(x => x.Value.User.UserId == user.UserId && x.Value.User.TenantId == user.TenantId, method, payload);
     }
+
 
     public Task SendGroupAsync(string groupName, string method, object payload)
     {

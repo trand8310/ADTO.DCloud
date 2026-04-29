@@ -1,7 +1,10 @@
+using System;
 using System.Net.WebSockets;
+using System.Threading.Tasks;
 using ADTOSharp;
 
-namespace ADTO.DCloud.Web.Chat.WebSocket;
+
+namespace ADTO.DCloud.Chat.WS;
 
 public interface IChatWebSocketConnectionManager
 {

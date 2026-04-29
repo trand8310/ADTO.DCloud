@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.SignalR;
 using ADTO.DCloud.Chat;
 using ADTO.DCloud.Chat.Dto;
 using ADTO.DCloud.Friendships;
-using ADTO.DCloud.Web.Chat.WebSocket;
 using ADTO.DCloud.Friendships.Dto;
+using ADTO.DCloud.Chat.WS;
 
 namespace ADTO.DCloud.Web.Chat.SignalR;
 
@@ -59,7 +59,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
 
             var payload = _objectMapper.Map<ChatMessageDto>(message);
             await signalRClient.SendAsync("getChatMessage", payload);
-            await _webSocketConnectionManager.SendAsync(client.UserId, "getChatMessage", payload);
+            await _webSocketConnectionManager.SendAsync(client.ToUserIdentifierOrNull(), "getChatMessage", payload);
         }
     }
 
@@ -85,7 +85,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             friendshipRequest.IsOnline = isFriendOnline;
 
             await signalRClient.SendAsync("getFriendshipRequest", friendshipRequest, isOwnRequest);
-            await _webSocketConnectionManager.SendAsync(client.UserId, "getFriendshipRequest", new { friendshipRequest, isOwnRequest });
+            await _webSocketConnectionManager.SendAsync(client.ToUserIdentifierOrNull(), "getFriendshipRequest", new { friendshipRequest, isOwnRequest });
         }
     }
 
@@ -107,7 +107,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getUserConnectNotification", user, isConnected);
-            await _webSocketConnectionManager.SendAsync(client.UserId, "getUserConnectNotification", new { user, isConnected });
+            await _webSocketConnectionManager.SendAsync(client.ToUserIdentifierOrNull(), "getUserConnectNotification", new { user, isConnected });
         }
     }
 
@@ -122,7 +122,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getUserStateChange", user, newState);
-            await _webSocketConnectionManager.SendAsync(client.UserId, "getUserStateChange", new { user, newState });
+            await _webSocketConnectionManager.SendAsync(client.ToUserIdentifierOrNull(), "getUserStateChange", new { user, newState });
         }
     }
 
@@ -143,7 +143,7 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
             }
 
             await signalRClient.SendAsync("getallUnreadMessagesOfUserRead", user);
-            await _webSocketConnectionManager.SendAsync(client.UserId, "getallUnreadMessagesOfUserRead", user);
+            await _webSocketConnectionManager.SendAsync(client.ToUserIdentifierOrNull(), "getallUnreadMessagesOfUserRead", user);
         }
     }
 
@@ -163,8 +163,9 @@ public class SignalRChatCommunicator : IChatCommunicator, ITransientDependency
                 continue;
             }
 
+           
             await signalRClient.SendAsync("getReadStateChange", user);
-            await _webSocketConnectionManager.SendAsync(client.UserId, "getReadStateChange", user);
+            await _webSocketConnectionManager.SendAsync(client.ToUserIdentifierOrNull(), "getReadStateChange", user);
         }
     }
 

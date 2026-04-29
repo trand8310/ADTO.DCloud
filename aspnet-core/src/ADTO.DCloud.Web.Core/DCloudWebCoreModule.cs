@@ -13,6 +13,7 @@ using ADTO.DistributedLocking;
 using ADTOSharp.AspNetCore;
 using ADTOSharp.AspNetCore.Configuration;
 using ADTOSharp.AspNetCore.SignalR;
+using ADTOSharp.AspNetCore.WebSocket;
 using ADTOSharp.Configuration.Startup;
 using ADTOSharp.Modules;
 using ADTOSharp.Reflection.Extensions;
@@ -37,6 +38,7 @@ namespace ADTO.DCloud
          typeof(ADTOSharpRedisCacheModule),
          typeof(ADTODistributedLockingModule),
          typeof(ADTOSharpAspNetCoreSignalRModule),
+         typeof(ADTOSharpAspNetCoreWebSocketModule),
          typeof(ADTOAspNetCoreOpenIddictModule)
 
      )]

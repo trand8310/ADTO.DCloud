@@ -1,9 +1,8 @@
 ﻿using ADTO.DCloud.Authentication.JwtBearer;
+using ADTO.DCloud.Chat.WS;
 using ADTO.DCloud.Configuration;
-using ADTO.DCloud.DataAuthorizes;
 using ADTO.DCloud.Identity;
 using ADTO.DCloud.Web.Chat.SignalR;
-using ADTO.DCloud.Web.Chat.WebSocket;
 using ADTO.DCloud.Web.Host.BackgroundJobs;
 using ADTO.DCloud.Web.Swagger;
 using ADTO.Swashbuckle;
@@ -13,30 +12,22 @@ using ADTOSharp.AspNetCore.Mvc.Antiforgery;
 using ADTOSharp.AspNetCore.Mvc.Extensions;
 using ADTOSharp.AspNetCore.SignalR.Hubs;
 using ADTOSharp.Castle.Logging.Log4Net;
-using ADTOSharp.Extensions;
-using ADTOSharp.PlugIns;
-using Castle.DynamicProxy;
 using Castle.Facilities.Logging;
 using JavaScriptEngineSwitcher.Core;
 using JavaScriptEngineSwitcher.Jurassic;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.DotNet.Scaffolding.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace ADTO.DCloud.Web.Host.Startup
@@ -237,14 +228,14 @@ namespace ADTO.DCloud.Web.Host.Startup
             app.UseStaticFiles();
 
             app.UseWebSockets();
-            app.UseMiddleware<ChatWebSocketMiddleware>();
+
 
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseJwtTokenMiddleware();
             app.UseAuthorization();
-
+            app.UseMiddleware<ChatWebSocketMiddleware>();
             app.UseADTOSharpRequestLocalization();
 
             // js 脚本引擎

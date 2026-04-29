@@ -1,7 +1,6 @@
 ﻿using ADTO.DCloud.Chat;
 using ADTO.DCloud.Chat.Dto;
 using ADTO.DCloud.Web.Xss;
-using ADTO.DCloud.Web.Chat.WebSocket;
 using ADTOSharp;
 using ADTOSharp.AspNetCore.SignalR.Hubs;
 using ADTOSharp.Localization;
@@ -14,8 +13,8 @@ using Castle.Windsor;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ADTO.DCloud.Chat.WS;
 
 namespace ADTO.DCloud.Web.Chat.SignalR;
 /// <summary>

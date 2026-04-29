@@ -1,7 +1,10 @@
-using System.Net.WebSockets;
-using ADTOSharp;
 
-namespace ADTO.DCloud.Web.Chat.WebSocket;
+using ADTOSharp;
+using System.Net.WebSockets;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ADTO.DCloud.Chat.WS;
 
 public interface IChatWebSocketCommandHandler
 {

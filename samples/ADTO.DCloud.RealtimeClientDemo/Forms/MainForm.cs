@@ -37,8 +37,18 @@ public class MainForm : Form
     {
         if ((_cmb.SelectedItem?.ToString()) == "SignalR")
         {
+            var hubUrl = $"{_api}/signalr-chat";
+            var finalUrl = hubUrl;
+            if (!string.IsNullOrWhiteSpace(_auth.EncryptedAccessToken))
+            {
+                finalUrl += (hubUrl.Contains('?') ? "&" : "?") +
+                            "enc_auth_token=" + Uri.EscapeDataString(_auth.EncryptedAccessToken);
+            }
+
+
+
             _hub = new HubConnectionBuilder()
-                .WithUrl($"{_api}/signalr-chat", o => o.AccessTokenProvider = () => Task.FromResult(_auth.EncryptedAccessToken)!)
+                .WithUrl(finalUrl)
                 .WithAutomaticReconnect()
                 .Build();
 
@@ -50,7 +60,7 @@ public class MainForm : Form
         else
         {
             _ws = new ClientWebSocket();
-            _ws.Options.SetRequestHeader("Authorization", $"Bearer {_auth.EncryptedAccessToken}");
+            _ws.Options.SetRequestHeader("Authorization", $"Bearer {_auth.AccessToken}");
             await _ws.ConnectAsync(new Uri($"{_api.Replace("http", "ws")}/ws-chat"), CancellationToken.None);
             _ = Task.Run(ReceiveWsLoopAsync);
             Log("WebSocket 已连接");

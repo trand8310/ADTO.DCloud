@@ -24,6 +24,7 @@
 		<NoWarn>1701;1702;CS1591</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\..\..\framework\src\ADTOSharp.AspNetCore.WebSocket\ADTOSharp.AspNetCore.WebSocket.csproj" />
 		<ProjectReference Include="..\ADTO.DCloud.Application\ADTO.DCloud.Application.csproj" />
 		<ProjectReference Include="..\ADTO.DCloud.EntityFrameworkCore\ADTO.DCloud.EntityFrameworkCore.csproj" />
 		<ProjectReference Include="..\..\..\framework\src\ADTOSharp.AspNetCore.SignalR\ADTOSharp.AspNetCore.SignalR.csproj" />

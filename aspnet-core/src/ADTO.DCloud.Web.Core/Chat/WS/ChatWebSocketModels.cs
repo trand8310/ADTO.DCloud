@@ -1,7 +1,7 @@
 using System.Text.Json;
-using ADTO.DCloud.Chat.Dto;
 
-namespace ADTO.DCloud.Web.Chat.WebSocket;
+
+namespace ADTO.DCloud.Chat.WS;
 
 public class ChatWebSocketRequest
 {
