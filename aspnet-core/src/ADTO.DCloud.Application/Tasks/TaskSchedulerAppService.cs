@@ -54,7 +54,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     {
         var item = ObjectMapper.Map<TaskScheduler>(input);
         await _taskSchedulerRepository.InsertAsync(item);
-        await _dynamicTaskManager.UpdateTaskAsync(ObjectMapper.Map<TaskSchedulerDto>(item));
+        await SyncTaskScheduleAsync(item.Id);
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
 
         //转换一下，否则其它字段也会置空
         await _taskSchedulerRepository.UpdateAsync(info);
-        await _dynamicTaskManager.UpdateTaskAsync(ObjectMapper.Map<TaskSchedulerDto>(info));
+        await SyncTaskScheduleAsync(info.Id);
     }
 
     /// <summary>
@@ -163,6 +163,21 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     {
         var info = await _taskSchedulerRepository.GetAsync(Id);
         return ObjectMapper.Map<TaskSchedulerDto>(info);
+    }
+
+    private async Task SyncTaskScheduleAsync(Guid taskId)
+    {
+        var entity = await _taskSchedulerRepository.GetAll()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == taskId);
+
+        if (entity == null || !entity.State)
+        {
+            await _dynamicTaskManager.RemoveTaskAsync(taskId);
+            return;
+        }
+
+        await _dynamicTaskManager.UpdateTaskAsync(ObjectMapper.Map<TaskSchedulerDto>(entity));
     }
 
     /// <summary>
