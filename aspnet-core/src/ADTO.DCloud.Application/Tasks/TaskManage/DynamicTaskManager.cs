@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Channels;
 
 namespace ADTO.DCloud.Tasks.TaskManage
 {
@@ -18,9 +19,15 @@ namespace ADTO.DCloud.Tasks.TaskManage
         private readonly IEnumerable<ICycleConfigParser> _cycleParsers;
         private readonly ILogger<DynamicTaskManager> _logger;
         private readonly ConcurrentDictionary<Guid, Timer> _activeTimers = new();
+        private readonly ConcurrentDictionary<Guid, DateTime> _lastScheduledTimes = new();
         private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _taskLocks = new();
         private readonly SemaphoreSlim _reloadLock = new(1, 1);
         private readonly ITaskSchedulerAppService _taskSchedulerAppService;
+        private readonly Channel<Guid> _taskQueue = Channel.CreateUnbounded<Guid>();
+        private readonly CancellationTokenSource _workerCts = new();
+        private readonly List<Task> _queueWorkers = new();
+        private readonly int _consumerCount = Math.Max(2, Environment.ProcessorCount / 2);
+        private int _workersStarted;
         public DynamicTaskManager(
             IServiceProvider serviceProvider,
             IEnumerable<ICycleConfigParser> cycleParsers,
@@ -35,6 +42,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
         public async Task InitializeAsync()
         {
+            StartQueueWorkers();
             await ReloadTasksAsync();
         }
 
@@ -45,27 +53,71 @@ namespace ADTO.DCloud.Tasks.TaskManage
             {
                 _logger.LogInformation("Reloading background tasks...");
 
-                // 停止所有现有任务
-                await StopAllAsync();
-
-                // 加载所有启用的任务
+                // 增量加载所有启用任务（不停止其他任务，避免重载造成调度抖动）
                 var activeTasks = await _taskSchedulerAppService.GetTaskSchedulerListByState();
+                var activeTaskIds = activeTasks.Select(x => x.Id).ToHashSet();
 
                 foreach (var taskConfig in activeTasks)
                 {
                     try
                     {
-                        await ScheduleTaskAsync(taskConfig);
+                        await UpsertTaskScheduleAsync(taskConfig);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, $"Failed to schedule task {taskConfig.Title} (ID: {taskConfig.Id})");
                     }
                 }
+
+                // 清理已被禁用或删除的任务
+                var obsoleteIds = _activeTimers.Keys.Where(id => !activeTaskIds.Contains(id)).ToList();
+                foreach (var obsoleteId in obsoleteIds)
+                {
+                    RemoveTaskTimer(obsoleteId);
+                }
             }
             finally
             {
                 _reloadLock.Release();
+            }
+        }
+
+
+        private void StartQueueWorkers()
+        {
+            if (Interlocked.Exchange(ref _workersStarted, 1) == 1)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _consumerCount; i++)
+            {
+                _queueWorkers.Add(Task.Run(() => ConsumeQueueAsync(_workerCts.Token)));
+            }
+
+            _logger.LogInformation("Started {Count} scheduler consumers.", _consumerCount);
+        }
+
+        private async Task ConsumeQueueAsync(CancellationToken cancellationToken)
+        {
+            await foreach (var taskId in _taskQueue.Reader.ReadAllAsync(cancellationToken))
+            {
+                try
+                {
+                    await ExecuteTaskAsync(taskId);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Task consumer failed for task {TaskId}", taskId);
+                }
+                finally
+                {
+                    await RescheduleTaskAsync(taskId);
+                }
             }
         }
 
@@ -96,17 +148,35 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 initialDelay = TimeSpan.Zero;
             }
 
-            // 创建定时器
+            // 创建单次触发定时器，执行完成后按配置重新计算下次触发时间
             var timer = new Timer(
-                async _ => await ExecuteTaskAsync(taskConfig.Id),
+                _ => EnqueueTask(taskConfig.Id),
                 null,
                 initialDelay,
-                parser.GetInterval(taskConfig.CycleJsonValue));
+                Timeout.InfiniteTimeSpan);
 
             _activeTimers[taskConfig.Id] = timer;
+            _lastScheduledTimes[taskConfig.Id] = nextExecutionTime;
 
             _logger.LogInformation($"Scheduled task: {taskConfig.Title} (ID: {taskConfig.Id}), " +
                                  $"Next run at: {nextExecutionTime:yyyy-MM-dd HH:mm:ss}");
+        }
+
+
+        private async Task UpsertTaskScheduleAsync(TaskSchedulerDto taskConfig)
+        {
+            RemoveTaskTimer(taskConfig.Id);
+            await ScheduleTaskAsync(taskConfig);
+        }
+
+        private void RemoveTaskTimer(Guid taskId)
+        {
+            if (_activeTimers.TryRemove(taskId, out var timer))
+            {
+                timer.Dispose();
+            }
+
+            _lastScheduledTimes.TryRemove(taskId, out _);
         }
 
         private async Task ExecuteTaskAsync(Guid taskId)
@@ -128,10 +198,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
             if (taskConfig == null || !taskConfig.State)
             {
                 _logger.LogWarning($"Task ID {taskId} not found or disabled, stopping timer");
-                if (_activeTimers.TryRemove(taskId, out var timer))
-                {
-                    timer.Dispose();
-                }
+                RemoveTaskTimer(taskId);
                 return;
             }
 
@@ -144,16 +211,6 @@ namespace ADTO.DCloud.Tasks.TaskManage
             try
             {
                 _logger.LogInformation($"Starting task: {taskConfig.Title} (ID: {taskId})");
-
-                // 更新最后执行时间
-                //taskConfig.LastExecutionTime = DateTime.Now;
-                //dbContext.BackgroundTasks.Update(taskConfig);
-                var parser = _cycleParsers.FirstOrDefault(p => p.CanParse(taskConfig.CycleType));
-                if (parser != null)
-                {
-                    var nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, DateTime.Now);
-                    await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
-                }
 
                 // 执行任务
                 if (taskConfig.ExecuteName.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -191,6 +248,55 @@ namespace ADTO.DCloud.Tasks.TaskManage
             }
         }
 
+
+        private void EnqueueTask(Guid taskId)
+        {
+            if (!_taskQueue.Writer.TryWrite(taskId))
+            {
+                _logger.LogWarning("Failed to enqueue task: {TaskId}", taskId);
+            }
+        }
+
+        private async Task RescheduleTaskAsync(Guid taskId)
+        {
+            if (!_activeTimers.TryGetValue(taskId, out var timer))
+            {
+                return;
+            }
+
+            var taskConfig = await _taskSchedulerAppService.GetTaskSchedulerByIdUnitOfWork(taskId);
+            if (taskConfig == null || !taskConfig.State)
+            {
+                RemoveTaskTimer(taskId);
+                return;
+            }
+
+            var parser = _cycleParsers.FirstOrDefault(p => p.CanParse(taskConfig.CycleType));
+            if (parser == null)
+            {
+                _logger.LogWarning("No parser found for cycle type: {CycleType}", taskConfig.CycleType);
+                return;
+            }
+
+            var lastScheduleTime = _lastScheduledTimes.GetOrAdd(taskId, _ => DateTime.Now);
+            var nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, lastScheduleTime);
+            var now = DateTime.Now;
+            if (nextExecutionTime <= now)
+            {
+                nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, now);
+            }
+
+            await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
+            _lastScheduledTimes[taskId] = nextExecutionTime;
+
+            var nextDelay = nextExecutionTime - now;
+            if (nextDelay < TimeSpan.Zero)
+            {
+                nextDelay = TimeSpan.Zero;
+            }
+
+            timer.Change(nextDelay, Timeout.InfiniteTimeSpan);
+        }
         /// <summary>
         /// 执行接口任务
         /// </summary>
@@ -254,6 +360,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 timer?.Dispose();
             }
             _activeTimers.Clear();
+            _lastScheduledTimes.Clear();
             return Task.CompletedTask;
         }
 
@@ -274,6 +381,13 @@ namespace ADTO.DCloud.Tasks.TaskManage
             }
         }
 
+
+        public Task RemoveTaskAsync(Guid taskId)
+        {
+            RemoveTaskTimer(taskId);
+            return Task.CompletedTask;
+        }
+
         public async Task<bool> UpdateTaskAsync(TaskSchedulerDto taskConfig)
         {
             await _reloadLock.WaitAsync();
@@ -284,20 +398,13 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 //await _dbContext.SaveChangesAsync();
 
                 // 如果任务正在运行，重新调度
-                if (_activeTimers.TryGetValue(taskConfig.Id, out var oldTimer))
+                if (!taskConfig.State)
                 {
-                    oldTimer.Dispose();
-                    _activeTimers.TryRemove(taskConfig.Id, out _);
+                    RemoveTaskTimer(taskConfig.Id);
+                    return true;
+                }
 
-                    if (taskConfig.State)
-                    {
-                        await ScheduleTaskAsync(taskConfig);
-                    }
-                }
-                else if (taskConfig.State)
-                {
-                    await ScheduleTaskAsync(taskConfig);
-                }
+                await UpsertTaskScheduleAsync(taskConfig);
 
                 return true;
             }
@@ -314,6 +421,10 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
         public void Dispose()
         {
+            _workerCts.Cancel();
+            _taskQueue.Writer.TryComplete();
+            Task.WhenAll(_queueWorkers).GetAwaiter().GetResult();
+            _workerCts.Dispose();
             _reloadLock?.Dispose();
             foreach (var item in _taskLocks.Values)
             {

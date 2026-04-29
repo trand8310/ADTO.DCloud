@@ -1,6 +1,7 @@
 ﻿using ADTO.DCloud.ScheduleTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using ADTO.DCloud.Tasks.ScheduleTasks;
 
 namespace ADTO.DCloud.Tasks.TaskManage
 {
