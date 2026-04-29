@@ -1,15 +1,12 @@
 ﻿using ADTO.DCloud.Tasks.Dto;
 using ADTOSharp.Threading.BackgroundWorkers;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,6 +18,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
         private readonly IEnumerable<ICycleConfigParser> _cycleParsers;
         private readonly ILogger<DynamicTaskManager> _logger;
         private readonly ConcurrentDictionary<Guid, Timer> _activeTimers = new();
+        private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _taskLocks = new();
         private readonly SemaphoreSlim _reloadLock = new(1, 1);
         private readonly ITaskSchedulerAppService _taskSchedulerAppService;
         public DynamicTaskManager(
@@ -113,6 +111,15 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
         private async Task ExecuteTaskAsync(Guid taskId)
         {
+            var taskLock = _taskLocks.GetOrAdd(taskId, _ => new SemaphoreSlim(1, 1));
+            if (!await taskLock.WaitAsync(0))
+            {
+                _logger.LogWarning("Task {TaskId} is already running, skipping overlapping execution.", taskId);
+                return;
+            }
+
+            try
+            {
             using var scope = _serviceProvider.CreateScope();
             //var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -141,7 +148,12 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 // 更新最后执行时间
                 //taskConfig.LastExecutionTime = DateTime.Now;
                 //dbContext.BackgroundTasks.Update(taskConfig);
-                await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, DateTime.Now);
+                var parser = _cycleParsers.FirstOrDefault(p => p.CanParse(taskConfig.CycleType));
+                if (parser != null)
+                {
+                    var nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, DateTime.Now);
+                    await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
+                }
 
                 // 执行任务
                 if (taskConfig.ExecuteName.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -171,6 +183,11 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 //await dbContext.SaveChangesAsync();
 
                 await _taskSchedulerAppService.CreateTaskExecutionHistoryAsync(history);
+            }
+            }
+            finally
+            {
+                taskLock.Release();
             }
         }
 
@@ -215,18 +232,13 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 throw new InvalidOperationException($"Worker not registered: {taskConfig.ExecuteName}");
             }
 
-            if (worker is BackgroundService backgroundService)
-            {
-                await backgroundService.StartAsync(default);
-                history.Result = "BackgroundService executed successfully";
-            }
-            else if (worker is IAsyncBackgroundWorker asyncWorker)
+            if (worker is IAsyncBackgroundWorker asyncWorker)
             {
                 history.Result = await asyncWorker.ExecuteAsync();
             }
             else
             {
-                throw new InvalidOperationException($"Unsupported worker type: {worker.GetType().FullName}");
+                throw new InvalidOperationException($"Unsupported worker type: {worker.GetType().FullName}. Task worker must implement IAsyncBackgroundWorker.");
             }
         }
 
@@ -303,6 +315,10 @@ namespace ADTO.DCloud.Tasks.TaskManage
         public void Dispose()
         {
             _reloadLock?.Dispose();
+            foreach (var item in _taskLocks.Values)
+            {
+                item.Dispose();
+            }
             StopAllAsync().GetAwaiter().GetResult();
         }
     }
