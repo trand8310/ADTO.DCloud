@@ -3,6 +3,7 @@ using ADTO.DCloud.Infrastructure;
 using ADTO.DCloud.Media.FileManage;
 using ADTO.DCloud.Media.FileManage.Aliyun;
 using ADTO.DCloud.Storage;
+using ADTO.DCloud.Tasks.TaskManage;
 using ADTO.DCloud.Url;
 using ADTOSharp;
 using ADTOSharp.AutoMapper;
@@ -35,6 +36,24 @@ public class DCloudApplicationModule : ADTOSharpModule
         IocManager.Register<IDownloadService, DownloadService>();
 
 
+        //注册周期解析器
+        IocManager.Register<ICycleConfigParser, EveryDayParser>();
+        IocManager.Register<ICycleConfigParser, NDayParser>();
+        IocManager.Register<ICycleConfigParser, EveryHourParser>();
+        IocManager.Register<ICycleConfigParser, NHourParser>();
+        IocManager.Register<ICycleConfigParser, NMinuteParser>();
+        IocManager.Register<ICycleConfigParser, EveryWeekParser>();
+        IocManager.Register<ICycleConfigParser, EveryMonthParser>();
+        IocManager.Register<ICycleConfigParser, NSecondParser>();
+
+        // 注册任务管理器
+        //IocManager.Register<IDynamicTaskManager, DynamicTaskManager>();
+
+
+
+
+
+
 
     }
 
@@ -48,6 +67,16 @@ public class DCloudApplicationModule : ADTOSharpModule
         Configuration.Modules.ADTOSharpAutoMapper().Configurators.Add(
             cfg => cfg.AddMaps(thisAssembly)
         );
+    }
+
+    public override void PostInitialize()
+    {
+
+
+ 
+
+
+
     }
 }
 

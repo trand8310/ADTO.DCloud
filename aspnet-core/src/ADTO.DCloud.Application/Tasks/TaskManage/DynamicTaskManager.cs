@@ -1,5 +1,10 @@
 ﻿using ADTO.DCloud.Tasks.Dto;
+using ADTOSharp.Dependency;
+using ADTOSharp.Domain.Repositories;
+using ADTOSharp.Domain.Uow;
+using ADTOSharp.ObjectMapping;
 using ADTOSharp.Threading.BackgroundWorkers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -8,12 +13,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Threading.Channels;
+using System.Threading.Tasks;
+using System.Transactions;
 
 namespace ADTO.DCloud.Tasks.TaskManage
 {
-    public class DynamicTaskManager : IDynamicTaskManager, IDisposable
+    public class DynamicTaskManager : IDynamicTaskManager, ISingletonDependency, IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IEnumerable<ICycleConfigParser> _cycleParsers;
@@ -22,31 +28,43 @@ namespace ADTO.DCloud.Tasks.TaskManage
         private readonly ConcurrentDictionary<Guid, DateTime> _lastScheduledTimes = new();
         private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _taskLocks = new();
         private readonly SemaphoreSlim _reloadLock = new(1, 1);
-        private readonly ITaskSchedulerAppService _taskSchedulerAppService;
+        private readonly IRepository<TaskScheduler, Guid> _taskSchedulerRepository;
+        private readonly IRepository<TaskExecutionHistory, Guid> _taskExecutionHistoryRepository;
         private readonly Channel<Guid> _taskQueue = Channel.CreateUnbounded<Guid>();
         private readonly CancellationTokenSource _workerCts = new();
         private readonly List<Task> _queueWorkers = new();
         private readonly int _consumerCount = Math.Max(2, Environment.ProcessorCount / 2);
         private int _workersStarted;
+        private readonly IObjectMapper _objectMapper;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
+
+
         public DynamicTaskManager(
             IServiceProvider serviceProvider,
             IEnumerable<ICycleConfigParser> cycleParsers,
-            ILogger<DynamicTaskManager> logger
-            , ITaskSchedulerAppService taskSchedulerAppService)
+            IRepository<TaskScheduler, Guid> taskSchedulerRepository,
+            IRepository<TaskExecutionHistory, Guid> taskExecutionHistoryRepository,
+            IObjectMapper objectMapper,
+            IUnitOfWorkManager unitOfWorkManager,
+            ILogger<DynamicTaskManager> logger)
         {
             _serviceProvider = serviceProvider;
             _cycleParsers = cycleParsers;
+            _taskSchedulerRepository = taskSchedulerRepository;
+            _taskExecutionHistoryRepository = taskExecutionHistoryRepository;
+            _objectMapper = objectMapper;
+            _unitOfWorkManager = unitOfWorkManager;
             _logger = logger;
-            _taskSchedulerAppService = taskSchedulerAppService;
+
         }
 
         public async Task InitializeAsync()
         {
-            StartQueueWorkers();
-            await ReloadTasksAsync();
+            InitializeQueueWorkers();
+            await InitializeTasksAsync();
         }
 
-        public async Task ReloadTasksAsync()
+        public async Task InitializeTasksAsync()
         {
             await _reloadLock.WaitAsync();
             try
@@ -54,7 +72,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 _logger.LogInformation("Reloading background tasks...");
 
                 // 增量加载所有启用任务（不停止其他任务，避免重载造成调度抖动）
-                var activeTasks = await _taskSchedulerAppService.GetTaskSchedulerListByState();
+                var activeTasks = await GetTaskSchedulerListByState();
                 var activeTaskIds = activeTasks.Select(x => x.Id).ToHashSet();
 
                 foreach (var taskConfig in activeTasks)
@@ -83,7 +101,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
         }
 
 
-        private void StartQueueWorkers()
+        private void InitializeQueueWorkers()
         {
             if (Interlocked.Exchange(ref _workersStarted, 1) == 1)
             {
@@ -139,7 +157,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
             taskConfig.NextExecutionTime = nextExecutionTime;
             //_dbContext.BackgroundTasks.Update(taskConfig);
             //await _dbContext.SaveChangesAsync();
-            await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
+            await UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
 
             // 计算初始延迟
             var initialDelay = nextExecutionTime - now;
@@ -187,60 +205,51 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 _logger.LogWarning("Task {TaskId} is already running, skipping overlapping execution.", taskId);
                 return;
             }
-
             try
             {
-            using var scope = _serviceProvider.CreateScope();
-            //var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            //var taskConfig = await dbContext.BackgroundTasks.FindAsync(taskId);
-            var taskConfig = await _taskSchedulerAppService.GetTaskSchedulerByIdUnitOfWork(taskId);
-            if (taskConfig == null || !taskConfig.State)
-            {
-                _logger.LogWarning($"Task ID {taskId} not found or disabled, stopping timer");
-                RemoveTaskTimer(taskId);
-                return;
-            }
-
-            var history = new TaskExecutionHistoryDto
-            {
-                TaskSchedulerId = taskId,
-                StartTime = DateTime.Now
-            };
-
-            try
-            {
-                _logger.LogInformation($"Starting task: {taskConfig.Title} (ID: {taskId})");
-
-                // 执行任务
-                if (taskConfig.ExecuteName.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                var taskConfig = await GetTaskSchedulerByIdUnitOfWork(taskId);
+                if (taskConfig == null || !taskConfig.State)
                 {
-                    await ExecuteHttpTaskAsync(taskConfig, history);
-                }
-                else
-                {
-                    await ExecuteServiceTaskAsync(taskConfig, history, scope.ServiceProvider);
+                    _logger.LogWarning($"Task ID {taskId} not found or disabled, stopping timer");
+                    RemoveTaskTimer(taskId);
+                    return;
                 }
 
-                history.IsSuccess = true;
-                history.EndTime = DateTime.Now;
-                _logger.LogInformation($"Task {taskConfig.Title} completed successfully");
-            }
-            catch (Exception ex)
-            {
-                history.IsSuccess = false;
-                history.ErrorMessage = ex.ToString();
-                history.EndTime = DateTime.Now;
-                _logger.LogError(ex, $"Error executing task {taskConfig.Title}");
-            }
-            finally
-            {
-                //添加历史记录
-                //dbContext.TaskExecutionHistories.Add(history);
-                //await dbContext.SaveChangesAsync();
+                var history = new TaskExecutionHistoryDto
+                {
+                    TaskSchedulerId = taskId,
+                    StartTime = DateTime.Now
+                };
 
-                await _taskSchedulerAppService.CreateTaskExecutionHistoryAsync(history);
-            }
+                try
+                {
+                    _logger.LogInformation($"Starting task: {taskConfig.Title} (ID: {taskId})");
+
+                    // 执行任务
+                    if (taskConfig.ExecuteName.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await ExecuteHttpTaskAsync(taskConfig, history);
+                    }
+                    else
+                    {
+                        //await ExecuteServiceTaskAsync(taskConfig, history, scope.ServiceProvider);
+                    }
+
+                    history.IsSuccess = true;
+                    history.EndTime = DateTime.Now;
+                    _logger.LogInformation($"Task {taskConfig.Title} completed successfully");
+                }
+                catch (Exception ex)
+                {
+                    history.IsSuccess = false;
+                    history.ErrorMessage = ex.ToString();
+                    history.EndTime = DateTime.Now;
+                    _logger.LogError(ex, $"Error executing task {taskConfig.Title}");
+                }
+                finally
+                {
+                    await CreateTaskExecutionHistoryAsync(history);
+                }
             }
             finally
             {
@@ -264,7 +273,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 return;
             }
 
-            var taskConfig = await _taskSchedulerAppService.GetTaskSchedulerByIdUnitOfWork(taskId);
+            var taskConfig = await GetTaskSchedulerByIdUnitOfWork(taskId);
             if (taskConfig == null || !taskConfig.State)
             {
                 RemoveTaskTimer(taskId);
@@ -286,7 +295,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
                 nextExecutionTime = parser.GetNextExecutionTime(taskConfig.CycleJsonValue, now);
             }
 
-            await _taskSchedulerAppService.UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
+            await UpdateNextExecutionTime(taskConfig.Id, nextExecutionTime);
             _lastScheduledTimes[taskId] = nextExecutionTime;
 
             var nextDelay = nextExecutionTime - now;
@@ -324,33 +333,32 @@ namespace ADTO.DCloud.Tasks.TaskManage
 
         private async Task ExecuteServiceTaskAsync(
             TaskSchedulerDto taskConfig,
-            TaskExecutionHistoryDto history,
-            IServiceProvider serviceProvider)
+            TaskExecutionHistoryDto history)
         {
-            var workerType = Type.GetType(taskConfig.ExecuteName);
-            if (workerType == null)
-            {
-                throw new InvalidOperationException($"Worker type not found: {taskConfig.ExecuteName}");
-            }
+            //var workerType = Type.GetType(taskConfig.ExecuteName);
+            //if (workerType == null)
+            //{
+            //    throw new InvalidOperationException($"Worker type not found: {taskConfig.ExecuteName}");
+            //}
 
-            if (serviceProvider.GetService(workerType) is not IBackgroundWorker worker)
-            {
-                throw new InvalidOperationException($"Worker not registered: {taskConfig.ExecuteName}");
-            }
+            ////if (serviceProvider.GetService(workerType) is not IBackgroundWorker worker)
+            ////{
+            ////    throw new InvalidOperationException($"Worker not registered: {taskConfig.ExecuteName}");
+            ////}
 
-            if (worker is IAsyncBackgroundWorker asyncWorker)
-            {
-                history.Result = await asyncWorker.ExecuteAsync();
-            }
-            else
-            {
-                throw new InvalidOperationException($"Unsupported worker type: {worker.GetType().FullName}. Task worker must implement IAsyncBackgroundWorker.");
-            }
+            //if (worker is IAsyncBackgroundWorker asyncWorker)
+            //{
+            //    history.Result = await asyncWorker.ExecuteAsync();
+            //}
+            //else
+            //{
+            //    throw new InvalidOperationException($"Unsupported worker type: {worker.GetType().FullName}. Task worker must implement IAsyncBackgroundWorker.");
+            //}
         }
 
         public async Task StartAllAsync()
         {
-            await ReloadTasksAsync();
+            await InitializeTasksAsync();
         }
 
         public Task StopAllAsync()
@@ -373,7 +381,7 @@ namespace ADTO.DCloud.Tasks.TaskManage
             else
             {
                 //var taskConfig = await _dbContext.BackgroundTasks.FindAsync(taskId);
-                var taskConfig = await _taskSchedulerAppService.GetTaskSchedulerByIdUnitOfWork(taskId);
+                var taskConfig = await GetTaskSchedulerByIdUnitOfWork(taskId);
                 if (taskConfig != null)
                 {
                     await ExecuteTaskAsync(taskId);
@@ -417,6 +425,65 @@ namespace ADTO.DCloud.Tasks.TaskManage
             {
                 _reloadLock.Release();
             }
+        }
+
+
+        /// <summary>
+        /// 获取指定任务
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TaskSchedulerDto> GetTaskSchedulerByIdUnitOfWork(Guid Id)
+        {
+            return await _unitOfWorkManager.WithUnitOfWorkAsync(async () =>
+            {
+                var info = await _taskSchedulerRepository.GetAsync(Id);
+                return _objectMapper.Map<TaskSchedulerDto>(info);
+            });
+
+        }
+
+        /// <summary>
+        /// 添加系统任务历史记录
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public async Task CreateTaskExecutionHistoryAsync(TaskExecutionHistoryDto input)
+        {
+            await _unitOfWorkManager.WithUnitOfWorkAsync(async () =>
+            {
+                var info = _objectMapper.Map<TaskExecutionHistory>(input);
+                await _taskExecutionHistoryRepository.InsertAsync(info);
+            });
+
+        }
+
+
+        /// <summary>
+        /// 修改下次执行时间
+        /// </summary>
+        /// <returns></returns>
+        //[UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
+        public async Task UpdateNextExecutionTime(Guid Id, DateTime NextExecutionTime)
+        {
+            await _unitOfWorkManager.WithUnitOfWorkAsync(async () =>
+            {
+                var list = await this._taskSchedulerRepository.GetAll().Where(p => p.State).ToListAsync();
+                await this._taskSchedulerRepository.UpdateAsync(Id, async entity => { entity.NextExecutionTime = NextExecutionTime; });
+            });
+        }
+
+        /// <summary>
+        /// 获取启用状态的任务列表
+        /// </summary>
+        /// <returns></returns>
+        //[UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
+        public async Task<List<TaskSchedulerDto>> GetTaskSchedulerListByState()
+        {
+            return await _unitOfWorkManager.WithUnitOfWorkAsync(async () =>
+            {
+                var list = await this._taskSchedulerRepository.GetAll().Where(p => p.State).ToListAsync();
+                return _objectMapper.Map<List<TaskSchedulerDto>>(list);
+            });
         }
 
         public void Dispose()

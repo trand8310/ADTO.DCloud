@@ -33,8 +33,8 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     public TaskSchedulerAppService(
        IRepository<TaskScheduler, Guid> taskSchedulerRepository
        , IRepository<TaskExecutionHistory, Guid> taskExecutionHistoryRepository
-       ,IRepository<User, Guid> userRepository
-       ,IDynamicTaskManager dynamicTaskManager)
+       , IRepository<User, Guid> userRepository
+       , IDynamicTaskManager dynamicTaskManager)
     {
         _taskSchedulerRepository = taskSchedulerRepository;
         _taskExecutionHistoryRepository = taskExecutionHistoryRepository;
@@ -117,8 +117,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     [UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
     public async Task<List<TaskSchedulerDto>> GetTaskSchedulerListByState()
     {
-       var list= await this._taskSchedulerRepository.GetAll().Where(p => p.State).ToListAsync();
-        return ObjectMapper.Map<List<TaskSchedulerDto>>(list);
+        return await _dynamicTaskManager.GetTaskSchedulerListByState();
     }
 
     /// <summary>
@@ -126,10 +125,9 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     /// </summary>
     /// <returns></returns>
     [UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
-    public async Task UpdateNextExecutionTime(Guid Id,DateTime NextExecutionTime)
+    public async Task UpdateNextExecutionTime(Guid Id, DateTime NextExecutionTime)
     {
-        var list = await this._taskSchedulerRepository.GetAll().Where(p => p.State).ToListAsync();
-        await this._taskSchedulerRepository.UpdateAsync(Id, async entity => { entity.NextExecutionTime = NextExecutionTime; });
+        await _dynamicTaskManager.UpdateNextExecutionTime(Id, NextExecutionTime);
     }
 
     /// <summary>
@@ -139,8 +137,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     [UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
     public async Task UpdateLastExecutionTime(Guid Id, DateTime LastExecutionTime)
     {
-        var list = await this._taskSchedulerRepository.GetAll().Where(p => p.State).ToListAsync();
-        await this._taskSchedulerRepository.UpdateAsync(Id, async entity => { entity.LastExecutionTime = LastExecutionTime; });
+        await _dynamicTaskManager.UpdateNextExecutionTime(Id, LastExecutionTime);
     }
     /// <summary>
     /// 添加系统任务历史记录
@@ -150,8 +147,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     [UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
     public async Task CreateTaskExecutionHistoryAsync(TaskExecutionHistoryDto input)
     {
-        var info = ObjectMapper.Map<TaskExecutionHistory>(input);
-        await _taskExecutionHistoryRepository.InsertAsync(info);
+        await _dynamicTaskManager.CreateTaskExecutionHistoryAsync(input);
     }
 
     /// <summary>
@@ -161,8 +157,7 @@ public class TaskSchedulerAppService : DCloudAppServiceBase, ITaskSchedulerAppSe
     [UnitOfWork(isTransactional: false, scope: TransactionScopeOption.RequiresNew)]
     public async Task<TaskSchedulerDto> GetTaskSchedulerByIdUnitOfWork(Guid Id)
     {
-        var info = await _taskSchedulerRepository.GetAsync(Id);
-        return ObjectMapper.Map<TaskSchedulerDto>(info);
+        return await _dynamicTaskManager.GetTaskSchedulerByIdUnitOfWork(Id);
     }
 
     private async Task SyncTaskScheduleAsync(Guid taskId)

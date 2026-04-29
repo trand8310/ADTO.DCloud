@@ -3,6 +3,7 @@ using ADTO.DCloud.Chat.WS;
 using ADTO.DCloud.Configuration;
 using ADTO.DCloud.Identity;
 using ADTO.DCloud.Notifications.WS;
+using ADTO.DCloud.Tasks.ScheduleTasks;
 using ADTO.DCloud.Web.Chat.SignalR;
 using ADTO.DCloud.Web.Host.BackgroundJobs;
 using ADTO.DCloud.Web.Swagger;
@@ -126,6 +127,8 @@ namespace ADTO.DCloud.Web.Host.Startup
 
             services.AddHostedService<SignalROnlineClientJanitorHostedService>();
 
+            // 注册后台服务
+            services.AddHostedService<ScheduleTaskBackgroundService>();
 
             // Configure CORS for angular2 UI
             /*

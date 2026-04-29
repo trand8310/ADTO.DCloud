@@ -8,6 +8,8 @@ using ADTO.DCloud.Infrastructure;
 using ADTO.DCloud.Media.FileManage;
 using ADTO.DCloud.Media.FileManage.Aliyun;
 using ADTO.DCloud.MultiTenancy;
+using ADTO.DCloud.Tasks.ScheduleTasks;
+using ADTO.DCloud.Tasks.TaskManage;
 using ADTO.DCloud.Web.Configuration;
 using ADTO.DistributedLocking;
 using ADTOSharp.AspNetCore;
@@ -185,6 +187,13 @@ namespace ADTO.DCloud
             ////定时服务
             //var workerManager = IocManager.Resolve<IBackgroundWorkerManager>();
             //workerManager.Add(IocManager.Resolve<ExpiredTestWork>()); 
+
+
+
+
+
+
+
         }
         private void SetAppFolders()
         {
