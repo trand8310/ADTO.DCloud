@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Color x:Key="DCloudVoidColor">#FF050714</Color>
+    <Color x:Key="DCloudPanelColor">#CC111A33</Color>
+    <Color x:Key="DCloudCyanColor">#FF00E5FF</Color>
+    <Color x:Key="DCloudBlueColor">#FF2979FF</Color>
+    <Color x:Key="DCloudVioletColor">#FF7C4DFF</Color>
+    <SolidColorBrush x:Key="DCloudVoidBrush" Color="{StaticResource DCloudVoidColor}" />
+    <SolidColorBrush x:Key="DCloudPanelBrush" Color="{StaticResource DCloudPanelColor}" />
+    <SolidColorBrush x:Key="DCloudCyanBrush" Color="{StaticResource DCloudCyanColor}" />
+    <SolidColorBrush x:Key="DCloudBlueBrush" Color="{StaticResource DCloudBlueColor}" />
+    <SolidColorBrush x:Key="DCloudVioletBrush" Color="{StaticResource DCloudVioletColor}" />
+    <LinearGradientBrush x:Key="DCloudNeonGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF00E5FF" Offset="0" />
+        <GradientStop Color="#FF2979FF" Offset="0.48" />
+        <GradientStop Color="#FF7C4DFF" Offset="1" />
+    </LinearGradientBrush>
+</ResourceDictionary>
